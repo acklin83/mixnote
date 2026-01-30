@@ -1,4 +1,4 @@
-# MixReaview - Development Roadmap (Compact)
+# Mixnote - Development Roadmap (Compact)
 
 **Branch:** `feature/mobile-fixes-and-enhancements`
 
@@ -40,7 +40,7 @@
 - Example: Project "Album XY - Mastering" → Default name "Album XY - Mastering"
 - User can edit/change name
 - Store changed name in localStorage for future comments (per-project)
-- localStorage key: `mixreaview_author_{project_uuid}`
+- localStorage key: `mixnote_author_{project_uuid}`
 
 ### 1.3 Touch Targets
 
@@ -94,20 +94,20 @@ Song C          1 open
 
 ### Requirement
 
-**Goal:** REAPER project remembers its MixReaview UUID automatically
+**Goal:** REAPER project remembers its Mixnote UUID automatically
 
 **Implementation:**
 ```lua
 -- On script start:
 1. Get current project path
 2. Generate project_id = MD5(path)
-3. Check ExtState: reaper.GetExtState("MixReaview", project_id)
+3. Check ExtState: reaper.GetExtState("Mixnote", project_id)
 4. If exists: Auto-load comments from that UUID
 5. If not: Show "Link to Project" button
 
 -- Link Project:
 1. User pastes share link (or just UUID)
-2. Save: reaper.SetExtState("MixReaview", project_id, uuid, true)
+2. Save: reaper.SetExtState("Mixnote", project_id, uuid, true)
 3. Reload comments
 
 -- Unlink Project:
@@ -122,7 +122,7 @@ Song C          1 open
 - Input field for UUID paste
 
 **Files to modify:**
-- `reaper/mixreaview_comments.lua`
+- `reaper/mixnote_comments.lua`
 
 **Time estimate:** 1-2 hours
 
@@ -147,7 +147,7 @@ Song C          1 open
 - `GET /api/admin/projects/list` for dropdown
 
 **Files:**
-- `reaper/mixreaview_upload.py` (new)
+- `reaper/mixnote_upload.py` (new)
 - Backend API extensions
 
 **Time estimate:** 6-9 hours

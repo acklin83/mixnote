@@ -48,7 +48,7 @@ async function checkSetupNeeded() {
 function showLogin() { $('login-screen').classList.remove('hidden'); $('dashboard').classList.add('hidden'); checkSetupNeeded(); }
 function showDashboard() {
   $('login-screen').classList.add('hidden'); $('dashboard').classList.remove('hidden');
-  const storedName = localStorage.getItem('mixreaview_admin_name');
+  const storedName = localStorage.getItem('mixnote_admin_name');
   if (storedName) $('admin-author-name').value = storedName;
   showProjects();
 }
@@ -59,7 +59,7 @@ $('login-form').addEventListener('submit', async (e) => {
     const loginUsername = $('username').value;
     const data = await api(isSetupMode ? '/admin/auth/setup' : '/admin/auth/login',
       { method: 'POST', json: { username: loginUsername, password: $('password').value } });
-    localStorage.setItem('mixreaview_admin_name', loginUsername);
+    localStorage.setItem('mixnote_admin_name', loginUsername);
     token = data.access_token; localStorage.setItem('token', token);
     $('admin-author-name').value = loginUsername;
     showDashboard();
@@ -371,7 +371,7 @@ window.closeReplyInput = function(commentId) {
 window.submitReply = async function(commentId) {
   const text = document.getElementById(`reply-text-${commentId}`).value.trim();
   if (!text) return;
-  const replyAuthor = localStorage.getItem('mixreaview_admin_name') || 'Admin';
+  const replyAuthor = localStorage.getItem('mixnote_admin_name') || 'Admin';
   await api(`/api/projects/${currentProject.share_link}/comments/${commentId}/reply`, { method: 'POST', json: { author_name: replyAuthor, text } });
   await loadComments(currentVersion.id);
 };
@@ -571,7 +571,7 @@ const FIELD_TO_ID = {
 function fieldToInputId(field) { return FIELD_TO_ID[field]; }
 
 // Theme mode
-let currentTheme = localStorage.getItem('mixreaview_theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+let currentTheme = localStorage.getItem('mixnote_theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 
 function populateSettingsUI() {
   if (!appSettings) return;
@@ -660,7 +660,7 @@ function updateThemeIcon() {
 }
 $('theme-toggle-btn').addEventListener('click', () => {
   currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('mixreaview_theme', currentTheme);
+  localStorage.setItem('mixnote_theme', currentTheme);
   if (appSettings) applySettings(appSettings);
   updateThemeIcon();
 });

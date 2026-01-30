@@ -1,4 +1,4 @@
-# Mix Reaview
+# Mixnote
 
 A self-hosted audio review platform for studios. Clients listen to mix versions and leave timeline-based comments via secure share links. Built with REAPER integration in mind.
 
@@ -36,7 +36,7 @@ Then visit:
 
 ## REAPER Integration
 
-The included Lua script (`reaper/mixreview_comments.lua`) connects REAPER to your Mix Reaview instance:
+The included Lua script (`reaper/mixnote_comments.lua`) connects REAPER to your Mixnote instance:
 
 - Login with admin credentials
 - Load project by share link (paste full URL or just the code)
@@ -50,7 +50,7 @@ The included Lua script (`reaper/mixreview_comments.lua`) connects REAPER to you
 ### Installation
 
 1. Install [ReaImGui](https://forum.cockos.com/showthread.php?t=250419) via ReaPack
-2. Copy `reaper/mixreview_comments.lua` to your REAPER Scripts folder
+2. Copy `reaper/mixnote_comments.lua` to your REAPER Scripts folder
 3. REAPER: Actions > Show Action List > Load ReaScript
 4. Assign a keyboard shortcut if desired
 
@@ -58,10 +58,10 @@ The included Lua script (`reaper/mixreview_comments.lua`) connects REAPER to you
 
 ```bash
 # Clone repo on DiskStation
-git clone https://github.com/acklin83/Mixreview.git /volume1/docker/mixreaview
+git clone https://github.com/acklin83/mixnote.git /volume1/docker/mixnote
 
 # Start
-cd /volume1/docker/mixreaview
+cd /volume1/docker/mixnote
 sudo docker-compose up --build -d
 ```
 
@@ -72,7 +72,7 @@ Configure reverse proxy in DSM:
 ## Project Structure
 
 ```
-mixreaview/
+mixnote/
 ├── backend/          # FastAPI application
 │   └── app/
 │       ├── main.py
@@ -84,7 +84,7 @@ mixreaview/
 │   ├── admin/        # Admin interface
 │   └── client/       # Client share link view
 ├── reaper/
-│   └── mixreview_comments.lua
+│   └── mixnote_comments.lua
 ├── nginx/
 ├── docker-compose.yml
 └── data/             # Uploads, DB, static files

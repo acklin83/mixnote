@@ -1,6 +1,6 @@
--- Mix Reaview Comments - REAPER Integration Script
+-- Mixnote Comments - REAPER Integration Script
 -- Requires ReaImGui (install via ReaPack)
--- Connects to Mix Reaview API for comment management
+-- Connects to Mixnote API for comment management
 --
 -- Usage: Run from REAPER Actions list
 -- Dependencies: ReaImGui, json (bundled below)
@@ -174,7 +174,7 @@ end
 ---------------------------------------------------------------------------
 -- State
 ---------------------------------------------------------------------------
-local ctx = reaper.ImGui_CreateContext('Mix Reaview Comments')
+local ctx = reaper.ImGui_CreateContext('Mixnote Comments')
 local FONT_SIZE = 14
 
 -- Hash function (DJB2) for generating project keys
@@ -200,14 +200,14 @@ local is_linked = false
 local linked_uuid = ""
 
 -- Persistent state (saved across sessions via ExtState)
-local server_url = reaper.GetExtState("Mix Reaview", "server_url")
-local author_name = reaper.GetExtState("Mix Reaview", "author_name")
-local username = reaper.GetExtState("Mix Reaview", "username")
-local share_link_input = reaper.GetExtState("Mix Reaview", "last_share_link")
+local server_url = reaper.GetExtState("Mixnote", "server_url")
+local author_name = reaper.GetExtState("Mixnote", "author_name")
+local username = reaper.GetExtState("Mixnote", "username")
+local share_link_input = reaper.GetExtState("Mixnote", "last_share_link")
 
 -- Check for per-project link
 if reaper_project_id then
-  linked_uuid = reaper.GetExtState("MixReaview_Link", reaper_project_id)
+  linked_uuid = reaper.GetExtState("Mixnote_Link", reaper_project_id)
   if linked_uuid ~= "" then
     is_linked = true
     share_link_input = linked_uuid
@@ -219,7 +219,7 @@ if author_name == "" then author_name = "Frank" end
 if username == "" then username = "admin" end
 
 -- Session state
-local password = reaper.GetExtState("Mix Reaview", "password")
+local password = reaper.GetExtState("Mixnote", "password")
 if password == nil then password = "" end
 local remember_password = (password ~= "")
 local jwt_token = ""
@@ -272,20 +272,20 @@ local function get_current_offset()
 end
 
 local function save_state()
-  reaper.SetExtState("Mix Reaview", "server_url", server_url, true)
-  reaper.SetExtState("Mix Reaview", "author_name", author_name, true)
-  reaper.SetExtState("Mix Reaview", "username", username, true)
-  reaper.SetExtState("Mix Reaview", "last_share_link", share_link_input, true)
+  reaper.SetExtState("Mixnote", "server_url", server_url, true)
+  reaper.SetExtState("Mixnote", "author_name", author_name, true)
+  reaper.SetExtState("Mixnote", "username", username, true)
+  reaper.SetExtState("Mixnote", "last_share_link", share_link_input, true)
   if remember_password then
-    reaper.SetExtState("Mix Reaview", "password", password, true)
+    reaper.SetExtState("Mixnote", "password", password, true)
   else
-    reaper.DeleteExtState("Mix Reaview", "password", true)
+    reaper.DeleteExtState("Mixnote", "password", true)
   end
 end
 
 local function link_project()
   if reaper_project_id and share_link_input ~= "" then
-    reaper.SetExtState("MixReaview_Link", reaper_project_id, share_link_input, true)
+    reaper.SetExtState("Mixnote_Link", reaper_project_id, share_link_input, true)
     linked_uuid = share_link_input
     is_linked = true
   end
@@ -293,7 +293,7 @@ end
 
 local function unlink_project()
   if reaper_project_id then
-    reaper.DeleteExtState("MixReaview_Link", reaper_project_id, true)
+    reaper.DeleteExtState("Mixnote_Link", reaper_project_id, true)
     linked_uuid = ""
     is_linked = false
   end
@@ -576,7 +576,7 @@ local function draw_song_version_section()
     local key = get_offset_key()
     if key ~= "" then
       calibration_offsets[key] = reaper.GetCursorPosition()
-      reaper.SetExtState("Mix Reaview", "offset_" .. key, tostring(calibration_offsets[key]), true)
+      reaper.SetExtState("Mixnote", "offset_" .. key, tostring(calibration_offsets[key]), true)
     end
   end
   if offset == 0 then
@@ -735,7 +735,7 @@ end
 ---------------------------------------------------------------------------
 local function loop()
   reaper.ImGui_SetNextWindowSize(ctx, 420, 700, reaper.ImGui_Cond_FirstUseEver())
-  local visible, open = reaper.ImGui_Begin(ctx, 'Mix Reaview Comments', true)
+  local visible, open = reaper.ImGui_Begin(ctx, 'Mixnote Comments', true)
 
   if visible then
     draw_login_section()
@@ -762,7 +762,7 @@ end
 -- Load saved calibration offsets (per song)
 for _, song in ipairs(songs) do
   local key = tostring(song.id)
-  local saved = reaper.GetExtState("Mix Reaview", "offset_" .. key)
+  local saved = reaper.GetExtState("Mixnote", "offset_" .. key)
   if saved ~= "" then calibration_offsets[key] = tonumber(saved) end
 end
 

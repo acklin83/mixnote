@@ -1,4 +1,4 @@
-# Mix Reaview System - Project Documentation
+# Mixnote System - Project Documentation
 
 ## Project Overview
 A self-hosted audio review platform for Störsender-Studio that allows clients to listen to mix versions and leave timeline-based comments via secure share links.
@@ -93,7 +93,7 @@ Project
 
 ### Directory Structure
 ```
-mixreaview/
+mixnote/
 ├── docker-compose.yml
 ├── nginx/
 │   ├── Dockerfile
@@ -122,7 +122,7 @@ mixreaview/
 │       ├── css/
 │       └── js/
 ├── reaper/
-│   └── mixreaview_comments.lua  # REAPER ReaImGui integration script
+│   └── mixnote_comments.lua  # REAPER ReaImGui integration script
 └── data/
     ├── uploads/          # Audio files
     ├── database/         # SQLite DB
@@ -283,7 +283,7 @@ https://mix.stoersender.ch/admin/setup
 ### Local Development
 ```bash
 # Clone/create project
-cd ~/Projects/mixreaview
+cd ~/Projects/mixnote
 
 # Start services
 docker-compose up --build
@@ -297,11 +297,11 @@ API Docs: http://localhost:8000/docs
 ### Synology Deployment
 ```bash
 # From development machine
-rsync -avz ~/Projects/mixreaview/ user@diskstation:/volume1/docker/mixreaview/
+rsync -avz ~/Projects/mixnote/ user@diskstation:/volume1/docker/mixnote/
 
 # On DiskStation
 ssh user@diskstation
-cd /volume1/docker/mixreaview
+cd /volume1/docker/mixnote
 docker-compose up -d
 
 # Configure in Synology DSM:
@@ -364,15 +364,15 @@ PATCH  /api/projects/{uuid}/comments/{id}/resolve-client    # Toggle resolved (s
 
 ## REAPER Integration
 
-### Script: `reaper/mixreaview_comments.lua`
-A ReaImGui-based script for managing Mix Reaview comments directly from REAPER.
+### Script: `reaper/mixnote_comments.lua`
+A ReaImGui-based script for managing Mixnote comments directly from REAPER.
 
 **Requirements:**
 - REAPER 6.0+
 - ReaImGui extension (install via ReaPack)
 
 **Installation:**
-1. Copy `reaper/mixreaview_comments.lua` to your REAPER Scripts folder
+1. Copy `reaper/mixnote_comments.lua` to your REAPER Scripts folder
 2. In REAPER: Actions → Show Action List → Load ReaScript
 3. Assign a keyboard shortcut if desired
 

@@ -8,8 +8,8 @@ let currentSong = null;
 let currentVersion = null;
 let ws = null; // wavesurfer
 let comments = [];
-let authorStorageKey = 'mixreaview_author';
-let currentTheme = localStorage.getItem('mixreaview_theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+let authorStorageKey = 'mixnote_author';
+let currentTheme = localStorage.getItem('mixnote_theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 
 // --- API ---
 async function api(path) {
@@ -100,8 +100,8 @@ async function init() {
   $('project-title').textContent = project.title;
 
   // Restore author name (per-project, with fallback to global)
-  authorStorageKey = `mixreaview_author_${shareLink}`;
-  const saved = localStorage.getItem(authorStorageKey) || localStorage.getItem('mixreaview_author');
+  authorStorageKey = `mixnote_author_${shareLink}`;
+  const saved = localStorage.getItem(authorStorageKey) || localStorage.getItem('mixnote_author');
   if (saved) {
     $('author-name').value = saved;
   } else {
@@ -403,7 +403,7 @@ function updateThemeIcon() {
 }
 $('theme-toggle-btn').addEventListener('click', () => {
   currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('mixreaview_theme', currentTheme);
+  localStorage.setItem('mixnote_theme', currentTheme);
   if (appSettings) applySettings(appSettings);
   updateThemeIcon();
 });
