@@ -462,6 +462,44 @@ local function api_reply(comment_id, text)
   end
 end
 
+local function api_toggle_favourite()
+  if not logged_in then return end
+  local song = songs[selected_song_idx]
+  local ver = song and song.versions and song.versions[selected_version_idx]
+  if not ver then return end
+
+  local url = server_url .. "/admin/versions/" .. tostring(ver.id) .. "/favourite"
+  local status, resp = http_request("PATCH", url, nil, jwt_token)
+  if status == 200 then
+    local data = json.decode(resp)
+    if data then
+      -- Update local state: clear all favourites for this song, set new one
+      for _, v in ipairs(song.versions) do
+        v.favourite = false
+      end
+      ver.favourite = data.favourite
+    end
+  else
+    error_msg = "Failed to toggle favourite (HTTP " .. tostring(status) .. ")"
+  end
+end
+
+local function api_refresh_project()
+  -- Reload project data without resetting selection
+  if share_link == "" then return end
+  local cur_song_idx = selected_song_idx
+  local cur_ver_idx = selected_version_idx
+  local url = server_url .. "/api/projects/" .. share_link
+  local status, resp = http_request("GET", url)
+  if status == 200 then
+    project_data = json.decode(resp)
+    songs = project_data and project_data.songs or {}
+    selected_song_idx = cur_song_idx <= #songs and cur_song_idx or (#songs > 0 and 1 or 0)
+    selected_version_idx = cur_ver_idx
+    load_calibration_offsets()
+  end
+end
+
 local function api_resolve(comment_id)
   -- Use admin endpoint with JWT
   local url = server_url .. "/api/projects/" .. share_link .. "/comments/" .. tostring(comment_id) .. "/resolve"
@@ -629,7 +667,7 @@ local function draw_song_version_section()
   local versions = current_song and current_song.versions or {}
   local current_ver = versions[selected_version_idx]
   local ver_label = current_ver and ("v" .. tostring(current_ver.version_number) .. (current_ver.favourite and " ★" or "")) or "v?"
-  reaper.ImGui_SetNextItemWidth(ctx, -1)
+  reaper.ImGui_SetNextItemWidth(ctx, logged_in and -30 or -1)
   if reaper.ImGui_BeginCombo(ctx, "##version", ver_label) then
     for i, ver in ipairs(versions) do
       local label = "v" .. tostring(ver.version_number)
@@ -641,6 +679,15 @@ local function draw_song_version_section()
       end
     end
     reaper.ImGui_EndCombo(ctx)
+  end
+
+  -- Favourite toggle (admin only)
+  if logged_in and current_ver then
+    reaper.ImGui_SameLine(ctx)
+    local star_label = current_ver.favourite and "★" or "☆"
+    if reaper.ImGui_SmallButton(ctx, star_label .. "##fav") then
+      api_toggle_favourite()
+    end
   end
 
   -- Calibration inline
@@ -705,6 +752,7 @@ local function draw_comments_section()
   if reaper.ImGui_RadioButton(ctx, "Done (" .. resolved_count .. ")", filter_mode == 2) then filter_mode = 2 end
   reaper.ImGui_SameLine(ctx)
   if reaper.ImGui_SmallButton(ctx, "Refresh") then
+    api_refresh_project()
     api_load_comments()
   end
 
