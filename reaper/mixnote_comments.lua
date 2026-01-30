@@ -345,6 +345,16 @@ local function api_load_comments()
   end
 end
 
+-- Load saved calibration offsets (per song) from REAPER project
+local function load_calibration_offsets()
+  calibration_offsets = {}
+  for _, song in ipairs(songs) do
+    local key = tostring(song.id)
+    local rv, saved = reaper.GetProjExtState(0, "Mixnote", "offset_" .. key)
+    if rv > 0 and saved ~= "" then calibration_offsets[key] = tonumber(saved) end
+  end
+end
+
 local function api_load_project()
   error_msg = ""
   loading = true
@@ -762,15 +772,6 @@ if is_linked and share_link_input ~= "" then
   end
 end
 
--- Load saved calibration offsets (per song) from REAPER project
-local function load_calibration_offsets()
-  calibration_offsets = {}
-  for _, song in ipairs(songs) do
-    local key = tostring(song.id)
-    local rv, saved = reaper.GetProjExtState(0, "Mixnote", "offset_" .. key)
-    if rv > 0 and saved ~= "" then calibration_offsets[key] = tonumber(saved) end
-  end
-end
 load_calibration_offsets()
 
 reaper.defer(loop)
