@@ -306,59 +306,6 @@ end
 ---------------------------------------------------------------------------
 -- API functions
 ---------------------------------------------------------------------------
-local function api_load_admin_projects()
-  if not logged_in or jwt_token == "" then return end
-  -- Reset project state
-  project_data = nil
-  songs = {}
-  selected_song_idx = 0
-  selected_version_idx = 0
-  comments = {}
-  selected_project_idx = 0
-
-  local url = server_url .. "/admin/projects"
-  local status, resp = http_request("GET", url, nil, jwt_token)
-  if status == 200 then
-    admin_projects = json.decode(resp) or {}
-    -- Restore previously selected project from RPP
-    if reaper_project_id then
-      local rv, saved_id = reaper.GetProjExtState(0, "Mixnote", "selected_project_id")
-      if rv > 0 and saved_id ~= "" then
-        for i, p in ipairs(admin_projects) do
-          if p.share_link == saved_id then
-            selected_project_idx = i
-            share_link_input = p.share_link
-            api_load_project()
-            break
-          end
-        end
-      end
-    end
-  else
-    error_msg = "Failed to load projects (HTTP " .. tostring(status) .. ")"
-  end
-end
-
-local function api_login()
-  login_error = ""
-  local url = server_url .. "/admin/auth/login"
-  local body = json.encode({username = username, password = password})
-  local status, resp = http_request("POST", url, body)
-  if status == 200 then
-    local data = json.decode(resp)
-    if data and data.access_token then
-      jwt_token = data.access_token
-      logged_in = true
-      save_state()
-      api_load_admin_projects()
-    else
-      login_error = "Invalid response"
-    end
-  else
-    login_error = "Login failed (HTTP " .. tostring(status) .. ")"
-  end
-end
-
 local function extract_share_code(input)
   -- Accept full URL or just the code
   -- e.g. "https://mix.stoersender.ch/fb162cbea433" -> "fb162cbea433"
@@ -426,6 +373,59 @@ local function api_load_project()
     songs = {}
   end
   loading = false
+end
+
+local function api_load_admin_projects()
+  if not logged_in or jwt_token == "" then return end
+  -- Reset project state
+  project_data = nil
+  songs = {}
+  selected_song_idx = 0
+  selected_version_idx = 0
+  comments = {}
+  selected_project_idx = 0
+
+  local url = server_url .. "/admin/projects"
+  local status, resp = http_request("GET", url, nil, jwt_token)
+  if status == 200 then
+    admin_projects = json.decode(resp) or {}
+    -- Restore previously selected project from RPP
+    if reaper_project_id then
+      local rv, saved_id = reaper.GetProjExtState(0, "Mixnote", "selected_project_id")
+      if rv > 0 and saved_id ~= "" then
+        for i, p in ipairs(admin_projects) do
+          if p.share_link == saved_id then
+            selected_project_idx = i
+            share_link_input = p.share_link
+            api_load_project()
+            break
+          end
+        end
+      end
+    end
+  else
+    error_msg = "Failed to load projects (HTTP " .. tostring(status) .. ")"
+  end
+end
+
+local function api_login()
+  login_error = ""
+  local url = server_url .. "/admin/auth/login"
+  local body = json.encode({username = username, password = password})
+  local status, resp = http_request("POST", url, body)
+  if status == 200 then
+    local data = json.decode(resp)
+    if data and data.access_token then
+      jwt_token = data.access_token
+      logged_in = true
+      save_state()
+      api_load_admin_projects()
+    else
+      login_error = "Invalid response"
+    end
+  else
+    login_error = "Login failed (HTTP " .. tostring(status) .. ")"
+  end
 end
 
 local function api_create_comment(timecode, text)
