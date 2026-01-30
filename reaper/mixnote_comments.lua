@@ -308,6 +308,14 @@ end
 ---------------------------------------------------------------------------
 local function api_load_admin_projects()
   if not logged_in or jwt_token == "" then return end
+  -- Reset project state
+  project_data = nil
+  songs = {}
+  selected_song_idx = 0
+  selected_version_idx = 0
+  comments = {}
+  selected_project_idx = 0
+
   local url = server_url .. "/admin/projects"
   local status, resp = http_request("GET", url, nil, jwt_token)
   if status == 200 then
