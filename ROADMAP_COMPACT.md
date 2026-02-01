@@ -185,6 +185,36 @@ Song C          1 open
 
 ---
 
+### Task 8: REAPER Waveform-Player mit Mixnote-Audio
+
+**Goal:** Waveform des aktuell geladenen Mixnote-Songs direkt im Lua Script anzeigen — mit Playhead-Steuerung und Kommentar-Markern.
+
+**Ansatz:** Peak-Daten werden serverseitig vorberechnet und als JSON-Endpoint bereitgestellt. Das Lua Script lädt die Peaks und rendert sie mit ImGui Draw-Primitives.
+
+**Backend:**
+- Beim Upload: Peak-Daten generieren (normalisierte Amplituden-Array, ~500–1000 Samples)
+- Neuer Endpoint: `GET /api/versions/{id}/peaks` → JSON-Array `[0.12, 0.45, 0.87, ...]`
+- Peaks als JSON-Datei neben der Audiodatei speichern (Cache)
+
+**Lua Script (ImGui):**
+1. Peaks vom Backend laden (einmalig pro Version-Wechsel)
+2. Waveform zeichnen via `ImGui_DrawList_AddLine()` / `AddRectFilled()`
+3. Kommentar-Marker als farbige vertikale Linien auf der Waveform
+4. Klick auf Waveform → Timecode berechnen (mit Calibration-Offset) → `reaper.SetEditCurPos()`
+5. Playhead-Linie: Echtzeit-Position als vertikale Linie über der Waveform
+6. Zoom/Scroll der Waveform (optional, Phase 2)
+
+**Abhängigkeiten:**
+- Calibration-Offset (bereits vorhanden im Script)
+- Versions-Auswahl (bereits vorhanden)
+- Kommentar-Timecodes (bereits vorhanden)
+
+**Files:**
+- Backend: `routers/projects.py` oder `routers/comments.py` (neuer Endpoint), `utils/audio.py` (Peak-Berechnung)
+- Lua: `reaper/mixnote_v2.lua` (Waveform-Rendering + Interaktion)
+
+---
+
 ### Task 6: Lua/ImGui Beautification (DONE ✅)
 
 **Result:** Created `mixnote_v2.lua` with website-matching dark theme, styled comment cards, accent colors, improved spacing. Also fixed author_name default ("Guest" → username) and Reply button right-alignment.
