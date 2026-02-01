@@ -307,14 +307,14 @@ function renderComments() {
           <button onclick="deleteComment(${c.id})" class="text-xs text-red-400/60 hover:text-red-400 transition py-2 px-2 min-h-[44px]">Delete</button>
         </span>
       </div>
-      <div id="reply-input-${c.id}" class="hidden mt-2 rounded-lg p-3" style="background:#2d2d2d;">
+      <div id="reply-input-${c.id}" class="hidden mt-2 rounded-lg p-3 overflow-hidden" style="background:#2d2d2d;">
         <input type="text" id="reply-text-${c.id}" placeholder="Write a reply..."
           class="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded text-sm focus:border-accent focus:outline-none mb-2">
-        <div class="flex gap-2 items-center">
-          <input type="text" id="reply-author-${c.id}" placeholder="Your name"
-            class="flex-1 min-w-0 px-3 py-2 bg-dark-700 border border-dark-600 rounded text-sm focus:border-accent focus:outline-none">
-          <button onclick="submitReply(${c.id})" class="shrink-0 px-4 py-2 bg-accent hover:bg-indigo-600 rounded text-sm font-medium transition">Send</button>
-          <button onclick="closeReplyInput(${c.id})" class="shrink-0 px-3 py-2 text-gray-400 hover:text-white text-sm transition">Cancel</button>
+        <input type="text" id="reply-author-${c.id}" placeholder="Your name"
+          class="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded text-sm focus:border-accent focus:outline-none mb-2">
+        <div class="flex gap-2">
+          <button onclick="submitReply(${c.id})" class="px-4 py-2 bg-accent hover:bg-indigo-600 rounded text-sm font-medium transition">Send</button>
+          <button onclick="closeReplyInput(${c.id})" class="px-3 py-2 text-gray-400 hover:text-white text-sm transition">Cancel</button>
         </div>
       </div>
     </div>
