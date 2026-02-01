@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_admin
 from ..database import get_db
 from ..models import AppSettings, Comment, Project, Reply, Song, Version
-from ..schemas import CommentCreate, CommentOut, ReplyCreate, ReplyOut
+from ..schemas import CommentCreate, CommentOut, CommentUpdate, ReplyCreate, ReplyOut
 
 router = APIRouter(tags=["comments"])
 
@@ -135,3 +135,33 @@ def resolve_comment_client(
     db.commit()
     db.refresh(comment)
     return comment
+
+
+@router.put("/api/projects/{share_link}/comments/{comment_id}", response_model=CommentOut)
+def update_comment_client(
+    share_link: str,
+    comment_id: int,
+    req: CommentUpdate,
+    db: Session = Depends(get_db),
+):
+    """Edit a comment via share link (client)."""
+    project = _validate_share_link(share_link, db)
+    comment = _get_comment_in_project(comment_id, project, db)
+    if req.text is not None:
+        comment.text = req.text
+    db.commit()
+    db.refresh(comment)
+    return comment
+
+
+@router.delete("/api/projects/{share_link}/comments/{comment_id}", status_code=204)
+def delete_comment_client(
+    share_link: str,
+    comment_id: int,
+    db: Session = Depends(get_db),
+):
+    """Delete a comment via share link (client)."""
+    project = _validate_share_link(share_link, db)
+    comment = _get_comment_in_project(comment_id, project, db)
+    db.delete(comment)
+    db.commit()

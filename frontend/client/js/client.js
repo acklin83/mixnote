@@ -300,8 +300,12 @@ function renderComments() {
       </div>
       <p class="text-sm text-gray-400 ${c.solved ? 'line-through' : ''}">${esc(c.text)}</p>
       ${(c.replies && c.replies.length > 0) ? c.replies.map(r => `<div class="mt-2 ml-3 pl-3 border-l-2 border-accent/30"><p class="text-sm text-gray-300">${esc(r.text)}</p><span class="text-xs text-gray-500">— ${esc(r.author_name)} · ${formatDate(r.created_at)}</span></div>`).join('') : ''}
-      <div class="mt-2">
+      <div class="mt-2 flex items-center gap-1">
         <button onclick="toggleReplyInput(${c.id})" class="text-sm text-accent hover:text-indigo-400 transition py-2 px-3 min-h-[44px]">Reply</button>
+        <span class="ml-auto flex items-center gap-1">
+          <button onclick="editComment(${c.id}, \`${esc(c.text).replace(/`/g, '\\`')}\`)" class="text-xs text-gray-500 hover:text-gray-300 transition py-2 px-2 min-h-[44px]">Edit</button>
+          <button onclick="deleteComment(${c.id})" class="text-xs text-red-400/60 hover:text-red-400 transition py-2 px-2 min-h-[44px]">Delete</button>
+        </span>
       </div>
       <div id="reply-input-${c.id}" class="hidden mt-2 rounded-lg p-3" style="background:#2d2d2d;">
         <input type="text" id="reply-text-${c.id}" placeholder="Write a reply..."
@@ -365,6 +369,25 @@ window.submitReply = async function(commentId) {
     localStorage.setItem(authorStorageKey, author);
     await loadComments(currentVersion.id);
   } catch (err) { alert('Failed to reply: ' + err.message); }
+};
+
+window.editComment = function(commentId, currentText) {
+  const newText = prompt('Edit comment:', currentText);
+  if (newText === null || newText.trim() === '') return;
+  fetch(`/api/projects/${shareLink}/comments/${commentId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: newText.trim() }),
+  }).then(() => loadComments(currentVersion.id))
+    .catch(err => alert('Failed to edit: ' + err.message));
+};
+
+window.deleteComment = function(commentId) {
+  if (!confirm('Delete this comment?')) return;
+  fetch(`/api/projects/${shareLink}/comments/${commentId}`, {
+    method: 'DELETE',
+  }).then(() => loadComments(currentVersion.id))
+    .catch(err => alert('Failed to delete: ' + err.message));
 };
 
 $('comment-submit').addEventListener('click', submitComment);
