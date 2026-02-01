@@ -206,9 +206,8 @@ if reaper_project_id then
   end
 end
 
-if server_url == "" then server_url = "https://mix.stoersender.ch" end
-if username == "" then username = "admin" end
-if author_name == "" then author_name = username end
+-- No hardcoded defaults - user must configure on first run
+if author_name == "" and username ~= "" then author_name = username end
 
 local password = reaper.GetExtState("Mixnote", "password")
 if password == nil then password = "" end
@@ -941,9 +940,11 @@ local function draw_comments_section()
             edit_comment_id = nil
           end
         else
-          -- Comment text
+          -- Comment text (always use TextWrapped for line breaks)
           if c.solved then
-            reaper.ImGui_TextColored(ctx, C.text_muted, c.text or "")
+            reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(), C.text_muted)
+            reaper.ImGui_TextWrapped(ctx, c.text or "")
+            reaper.ImGui_PopStyleColor(ctx)
           else
             reaper.ImGui_TextWrapped(ctx, c.text or "")
           end
