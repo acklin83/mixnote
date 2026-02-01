@@ -503,6 +503,7 @@ local function api_login()
     if data and data.access_token then
       jwt_token = data.access_token
       logged_in = true
+      if author_name == "" then author_name = username end
       save_state()
       api_load_admin_projects()
     else
