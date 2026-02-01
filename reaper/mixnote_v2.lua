@@ -694,39 +694,6 @@ local function draw_project_section()
       end
       reaper.ImGui_EndCombo(ctx)
     end
-  else
-    reaper.ImGui_TextColored(ctx, C.text_dim, "Share Link")
-    reaper.ImGui_SameLine(ctx, 85)
-    reaper.ImGui_SetNextItemWidth(ctx, -60)
-    local changed
-    changed, share_link_input = reaper.ImGui_InputText(ctx, "##share_link", share_link_input)
-    reaper.ImGui_SameLine(ctx)
-    if reaper.ImGui_Button(ctx, "Load##load_btn") then
-      api_load_project()
-    end
-
-    if reaper_project_id then
-      if is_linked then
-        reaper.ImGui_TextColored(ctx, C.green, "Linked")
-        reaper.ImGui_SameLine(ctx)
-        if sec_button("Unlink") then
-          unlink_project()
-        end
-      else
-        if share_link_input ~= "" and project_data then
-          if sec_button("Link to Project") then
-            link_project()
-          end
-        end
-      end
-    else
-      reaper.ImGui_TextColored(ctx, C.amber, "Save REAPER project to enable linking")
-    end
-  end
-
-  if project_data then
-    reaper.ImGui_Spacing(ctx)
-    reaper.ImGui_TextColored(ctx, C.accent, project_data.title or "")
   end
 
   if error_msg ~= "" then
@@ -781,17 +748,19 @@ local function draw_song_version_section()
     reaper.ImGui_EndCombo(ctx)
   end
 
-  -- Favourite toggle (admin only) - filled/outline star
+  -- Favourite toggle (admin only) - filled/outline star, same height as combo
   if logged_in and current_ver then
     reaper.ImGui_SameLine(ctx)
     local fav_col = current_ver.favourite and C.yellow or C.text_muted
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), C.bg_input)
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), C.bg_border)
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), C.text_muted)
     reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(), fav_col)
-    -- UTF-8: filled star = E2 98 85, outline star = E2 98 86
     local star = current_ver.favourite and "\xe2\x98\x85##fav" or "\xe2\x98\x86##fav"
-    if sec_button(star) then
+    if reaper.ImGui_Button(ctx, star) then
       api_toggle_favourite()
     end
-    reaper.ImGui_PopStyleColor(ctx)
+    reaper.ImGui_PopStyleColor(ctx, 4)
   end
 
   -- Calibration
@@ -909,12 +878,12 @@ local function draw_comments_section()
 
         -- Right-aligned admin actions: Done, Edit, Delete
         if logged_in then
-          -- Calculate positions for right-alignment
+          -- Calculate positions for right-alignment (8px margin from card edge)
           local btn_delete_w = 50
           local btn_edit_w = 40
           local btn_done_w = 45
           local spacing = 4
-          local right_edge = card_w
+          local right_edge = card_w - 8
           local delete_x = right_edge - btn_delete_w
           local edit_x = delete_x - btn_edit_w - spacing
           local done_x = edit_x - btn_done_w - spacing
