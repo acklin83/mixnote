@@ -189,31 +189,15 @@ Song C          1 open
 
 ---
 
-### Task 5: WebView Script (Big Feature)
+### ~~Task 5: WebView Script~~ (CANCELLED)
 
-**Goal:** Beautiful web UI instead of ImGui for REAPER integration
+**Status:** CANCELLED - Not viable
 
-**Architecture:**
-```
-Browser Window (localhost:9999)
-    ↕ WebSocket
-Python Script in REAPER
-    ↕ REAPER API
-```
+**Reason:** REAPER has no built-in browser/webview component. The script would just open an external browser window, which provides no advantage over simply using the Mixnote web interface directly in a browser. The whole point was tight REAPER integration, which an external browser can't deliver.
 
-**Benefits:**
-- Identical UI to website (professional look)
-- Better UX than ImGui
-- Marketing/demo advantage
+**Work done (branch `webview`):** Python WebSocket bridge + local web server prototype. Code exists but is not worth pursuing.
 
-**Implementation:**
-- Python script starts HTTP server + WebSocket server
-- Opens browser automatically
-- Browser displays same UI as website
-- WebSocket sends jump/play commands to REAPER
-- REAPER sends playhead position to browser
-
-**Time estimate:** 6-8 hours
+**Conclusion:** The existing Lua/ImGui script (`mixnote_comments.lua`) remains the best approach for in-REAPER integration. Focus improvements there instead.
 
 ---
 
@@ -310,7 +294,7 @@ CREATE TABLE markers (
 **Phase 2 Goals:**
 ✅ Upload from REAPER works  
 ✅ Markers display in waveform  
-✅ WebView provides beautiful UI  
+~~WebView provides beautiful UI~~ (cancelled - no built-in browser in REAPER)  
 
 ---
 
