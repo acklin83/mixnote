@@ -766,13 +766,13 @@ local function draw_song_version_section()
 
   local versions = current_song and current_song.versions or {}
   local current_ver = versions[selected_version_idx]
-  local ver_label = current_ver and ("v" .. tostring(current_ver.version_number) .. (current_ver.favourite and " *" or "")) or "v?"
+  local ver_label = current_ver and ("v" .. tostring(current_ver.version_number)) or "v?"
   reaper.ImGui_SetNextItemWidth(ctx, logged_in and -30 or -1)
   if reaper.ImGui_BeginCombo(ctx, "##version", ver_label) then
     for i, ver in ipairs(versions) do
       local label = "v" .. tostring(ver.version_number)
       if ver.label and ver.label ~= "" then label = label .. " - " .. ver.label end
-      if ver.favourite then label = label .. " *" end
+      if ver.favourite then label = label .. " \xe2\x98\x85" end
       if reaper.ImGui_Selectable(ctx, label, i == selected_version_idx) then
         selected_version_idx = i
         api_load_comments()
@@ -781,12 +781,14 @@ local function draw_song_version_section()
     reaper.ImGui_EndCombo(ctx)
   end
 
-  -- Favourite toggle (admin only)
+  -- Favourite toggle (admin only) - filled/outline star
   if logged_in and current_ver then
     reaper.ImGui_SameLine(ctx)
     local fav_col = current_ver.favourite and C.yellow or C.text_muted
     reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(), fav_col)
-    if sec_button(current_ver.favourite and "*##fav" or "-##fav") then
+    -- UTF-8: filled star = E2 98 85, outline star = E2 98 86
+    local star = current_ver.favourite and "\xe2\x98\x85##fav" or "\xe2\x98\x86##fav"
+    if sec_button(star) then
       api_toggle_favourite()
     end
     reaper.ImGui_PopStyleColor(ctx)
@@ -888,7 +890,7 @@ local function draw_comments_section()
 
         reaper.ImGui_BeginGroup(ctx)
 
-        -- Header row: @timecode  Author  [Done] [Edit] [X]
+        -- Header row: @timecode  Author          [Done] [Edit] [Delete]
         local tc_col = c.solved and C.text_muted or C.accent
         reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), C.bg_border)
         reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), C.accent_dim)
@@ -905,17 +907,29 @@ local function draw_comments_section()
         reaper.ImGui_SameLine(ctx)
         reaper.ImGui_TextColored(ctx, c.solved and C.text_muted or C.text, (c.author_name or ""))
 
-        -- Admin actions on same header line (right side): Done checkbox, Edit, Delete
+        -- Right-aligned admin actions: Done, Edit, Delete
         if logged_in then
-          reaper.ImGui_SameLine(ctx)
-          local done_changed, done_val = reaper.ImGui_Checkbox(ctx, "Done##done", c.solved or false)
-          if done_changed then
+          -- Calculate positions for right-alignment
+          local btn_delete_w = 50
+          local btn_edit_w = 40
+          local btn_done_w = 45
+          local spacing = 4
+          local right_edge = card_w
+          local delete_x = right_edge - btn_delete_w
+          local edit_x = delete_x - btn_edit_w - spacing
+          local done_x = edit_x - btn_done_w - spacing
+
+          reaper.ImGui_SameLine(ctx, done_x)
+          local done_col = c.solved and C.green or C.text_dim
+          reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(), done_col)
+          if sec_button(c.solved and "Done##done" or "Done##done") then
             api_resolve(c.id)
           end
+          reaper.ImGui_PopStyleColor(ctx)
 
-          reaper.ImGui_SameLine(ctx)
+          reaper.ImGui_SameLine(ctx, edit_x)
           reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(), C.text_dim)
-          if sec_button("E##edit") then
+          if sec_button("Edit##edit") then
             if edit_comment_id == c.id then
               edit_comment_id = nil
             else
@@ -925,15 +939,16 @@ local function draw_comments_section()
           end
           reaper.ImGui_PopStyleColor(ctx)
 
-          reaper.ImGui_SameLine(ctx)
+          reaper.ImGui_SameLine(ctx, delete_x)
           reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(), C.red)
-          if sec_button("X##del") then
+          if sec_button("Delete##del") then
             api_delete_comment(c.id)
           end
           reaper.ImGui_PopStyleColor(ctx)
         else
-          -- Non-admin: just show status
-          reaper.ImGui_SameLine(ctx)
+          -- Non-admin: just show status (right-aligned)
+          local status_w = 40
+          reaper.ImGui_SameLine(ctx, card_w - status_w)
           if c.solved then
             reaper.ImGui_TextColored(ctx, C.green, "Done")
           else
@@ -977,13 +992,10 @@ local function draw_comments_section()
           reaper.ImGui_Unindent(ctx, 12)
         end
 
-        -- Reply button (text-style like website)
+        -- Reply button (same sec_button styling)
         reaper.ImGui_Spacing(ctx)
-        reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), 0x00000000)
-        reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), 0x00000000)
-        reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), 0x00000000)
         reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(), C.accent)
-        if reaper.ImGui_SmallButton(ctx, "Reply") then
+        if sec_button("Reply") then
           if reply_comment_id == c.id then
             reply_comment_id = nil
           else
@@ -991,7 +1003,7 @@ local function draw_comments_section()
             reply_text = ""
           end
         end
-        reaper.ImGui_PopStyleColor(ctx, 4)
+        reaper.ImGui_PopStyleColor(ctx)
 
         -- Reply input
         if reply_comment_id == c.id then
