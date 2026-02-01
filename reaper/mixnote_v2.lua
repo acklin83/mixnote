@@ -609,7 +609,7 @@ local function draw_login_section()
   end
 
   if reaper.ImGui_TreeNode(ctx, "Login", reaper.ImGui_TreeNodeFlags_DefaultOpen()) then
-    local label_w = 75
+    local label_w = 85
 
     reaper.ImGui_TextColored(ctx, C.text_dim, "Server")
     reaper.ImGui_SameLine(ctx, label_w)
@@ -653,7 +653,7 @@ local function draw_project_section()
     local proj_label = current_proj and current_proj.title or "Select project..."
 
     reaper.ImGui_TextColored(ctx, C.text_dim, "Project")
-    reaper.ImGui_SameLine(ctx, 75)
+    reaper.ImGui_SameLine(ctx, 85)
     reaper.ImGui_SetNextItemWidth(ctx, -1)
     if reaper.ImGui_BeginCombo(ctx, "##project_select", proj_label) then
       for i, p in ipairs(admin_projects) do
@@ -670,7 +670,7 @@ local function draw_project_section()
     end
   else
     reaper.ImGui_TextColored(ctx, C.text_dim, "Share Link")
-    reaper.ImGui_SameLine(ctx, 75)
+    reaper.ImGui_SameLine(ctx, 85)
     reaper.ImGui_SetNextItemWidth(ctx, -60)
     local changed
     changed, share_link_input = reaper.ImGui_InputText(ctx, "##share_link", share_link_input)
@@ -841,6 +841,7 @@ local function draw_comments_section()
   -- Scrollable comment list
   if reaper.ImGui_BeginChild(ctx, "##comments_scroll", 0, 0, 0) then
 
+    reaper.ImGui_Spacing(ctx)
     local offset = get_current_offset()
     for _, c in ipairs(comments) do
       local show = (filter_mode == 0)
@@ -942,10 +943,11 @@ local function draw_comments_section()
         -- Draw card background behind the group
         local _, group_h = reaper.ImGui_GetItemRectSize(ctx)
         local card_bg = c.solved and C.card_solved or C.card_open
-        local pad = 6
+        local pad_x = 8
+        local pad_y = 8
         reaper.ImGui_DrawList_AddRectFilled(dl,
-          cx - pad, cy - pad,
-          cx + card_w + pad, cy + group_h + pad,
+          cx - pad_x, cy - pad_y,
+          cx + card_w + pad_x, cy + group_h + pad_y,
           card_bg, 4)
 
         reaper.ImGui_PopID(ctx)
@@ -964,6 +966,7 @@ end
 local function loop()
   apply_theme()
   reaper.ImGui_SetNextWindowSize(ctx, 420, 700, reaper.ImGui_Cond_FirstUseEver())
+  reaper.ImGui_SetNextWindowSizeConstraints(ctx, 420, 300, 9999, 9999)
   local visible, open = reaper.ImGui_Begin(ctx, 'Mixnote', true)
 
   if visible then
