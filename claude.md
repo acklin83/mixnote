@@ -422,6 +422,15 @@ A ReaImGui-based script for managing Mixnote comments directly from REAPER.
   - `backend/app/schemas.py` — CommentUpdate schema (if not already present)
   - `frontend/client/js/client.js` — edit/delete UI, reply form layout fix
 
+### 2025-02-01: Logout Reset + Edit Line Breaks
+- **Branch:** `claude/review-previous-work-6qOhZ`
+- **Changes:**
+  1. **Logout reset**: On logout, all project/comment state (project_data, songs, comments, share_link, selections, edit/reply state) is cleared so the UI returns to the initial login view.
+  2. **Edit mode line breaks**: Edit textarea now auto-sizes height based on number of newlines in the comment text (`num_lines` counted via `gmatch("\n")`), minimum 2 lines.
+- **Files modified:**
+  - `reaper/mixnote_v2.lua`
+- **Note:** "Add Song" / "Upload New Version" from REAPER was considered but rejected — ReaImGui has no file browser dialog, making the UX impractical.
+
 ## Development Notes
 - Prefer simple, maintainable solutions over complex frameworks
 - Direct, efficient code - no unnecessary abstractions

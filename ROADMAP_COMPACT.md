@@ -130,27 +130,11 @@ Song C          1 open
 
 ## PHASE 2 (Later) - Advanced Features
 
-### Task 3: REAPER Upload from Script
+### ~~Task 3: REAPER Upload from Script~~ (CANCELLED)
 
-**Goal:** Upload rendered mixes directly from REAPER without browser
+**Status:** CANCELLED - Not viable
 
-**Key Features:**
-- File browser for WAV/MP3/FLAC selection
-- Create new project OR add to existing project
-- Dropdowns for project/song selection
-- Upload with progress indicator
-- Share link copied to clipboard
-- Auto-link to current REAPER project
-
-**Backend needs:**
-- `POST /api/admin/upload` endpoint
-- `GET /api/admin/projects/list` for dropdown
-
-**Files:**
-- `reaper/mixnote_upload.py` (new)
-- Backend API extensions
-
-**Time estimate:** 6-9 hours
+**Reason:** ReaImGui has no file browser dialog. Manual path entry is error-prone and bad UX. Upload via the web frontend is simpler and more reliable.
 
 ---
 
