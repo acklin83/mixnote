@@ -674,7 +674,7 @@ local function draw_login_section()
     return
   end
 
-  if reaper.ImGui_TreeNode(ctx, "Login", reaper.ImGui_TreeNodeFlags_DefaultOpen()) then
+  do
     local label_w = 95
 
     reaper.ImGui_TextColored(ctx, C.text_dim, "Server")
@@ -707,7 +707,6 @@ local function draw_login_section()
       reaper.ImGui_Spacing(ctx)
       reaper.ImGui_TextColored(ctx, C.red, login_error)
     end
-    reaper.ImGui_TreePop(ctx)
   end
 end
 
@@ -822,10 +821,8 @@ local function draw_song_version_section()
     reaper.ImGui_TextColored(ctx, C.amber, "(!)")
   end
 
-  -- Autoplay toggle (right-aligned on offset line)
+  -- Autoplay toggle (on same line after offset controls)
   if share_link ~= "" and selected_version_idx > 0 then
-    reaper.ImGui_SameLine(ctx)
-    reaper.ImGui_Dummy(ctx, full_w - reaper.ImGui_GetCursorPosX(ctx) - 82, 0)
     reaper.ImGui_SameLine(ctx)
     reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 2, 2)
     local changed
