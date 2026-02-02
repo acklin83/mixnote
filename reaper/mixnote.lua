@@ -823,8 +823,9 @@ local function draw_song_version_section()
 
   -- Autoplay toggle (right-aligned on same line)
   if share_link ~= "" and selected_version_idx > 0 then
-    local avail_w = reaper.ImGui_GetContentRegionAvail(ctx)
-    reaper.ImGui_SameLine(ctx, reaper.ImGui_GetContentRegionMax(ctx) - 80)
+    local wx, _ = reaper.ImGui_GetWindowSize(ctx)
+    local pad = reaper.ImGui_GetStyleVar(ctx, reaper.ImGui_StyleVar_WindowPadding())
+    reaper.ImGui_SameLine(ctx, wx - pad - 85)
     local changed
     changed, autoplay_enabled = reaper.ImGui_Checkbox(ctx, "Autoplay", autoplay_enabled)
     if changed then save_state() end
