@@ -837,7 +837,7 @@ local function draw_waveform_section()
   reaper.ImGui_Spacing(ctx)
 
   -- Waveform dimensions
-  local wf_h = 100
+  local wf_h = 50
   local wf_w = reaper.ImGui_GetContentRegionAvail(ctx)
   local wx, wy = reaper.ImGui_GetCursorScreenPos(ctx)
 
@@ -850,18 +850,29 @@ local function draw_waveform_section()
   -- Background
   reaper.ImGui_DrawList_AddRectFilled(dl, wx, wy, wx + wf_w, wy + wf_h, C.bg_input, 4)
 
-  -- Waveform bars
-  local bar_count = #waveform_peaks
-  local bar_w = wf_w / bar_count
+  -- Waveform bars — downsample to pixel width for performance
+  local peak_count = #waveform_peaks
+  local draw_bars = math.floor(math.min(wf_w, peak_count))
+  local bar_w = wf_w / draw_bars
   local center_y = wy + wf_h / 2
+  local samples_per_bar = peak_count / draw_bars
 
-  for i, peak in ipairs(waveform_peaks) do
-    local x = wx + (i - 1) * bar_w
+  for i = 0, draw_bars - 1 do
+    -- Find max peak in this bar's range
+    local s = math.floor(i * samples_per_bar) + 1
+    local e = math.floor((i + 1) * samples_per_bar)
+    local peak = 0
+    for j = s, e do
+      if waveform_peaks[j] and waveform_peaks[j] > peak then
+        peak = waveform_peaks[j]
+      end
+    end
+    local x = wx + i * bar_w
     local h = peak * (wf_h * 0.45)
     if h > 0.5 then
       reaper.ImGui_DrawList_AddRectFilled(dl,
         x, center_y - h,
-        x + bar_w - 1, center_y + h,
+        x + bar_w, center_y + h,
         C.accent, 0)
     end
   end
