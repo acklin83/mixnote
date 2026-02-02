@@ -822,19 +822,16 @@ local function draw_song_version_section()
     reaper.ImGui_TextColored(ctx, C.amber, "(!)")
   end
 
-  -- Autoplay toggle (right-aligned, drawn on previous line)
+  -- Autoplay toggle (right-aligned on offset line)
   if share_link ~= "" and selected_version_idx > 0 then
-    local save_y = reaper.ImGui_GetCursorPosY(ctx)
-    local win_w = reaper.ImGui_GetWindowWidth(ctx)
-    local pad_x = select(1, reaper.ImGui_GetStyleVar(ctx, reaper.ImGui_StyleVar_WindowPadding()))
-    reaper.ImGui_SetCursorPosY(ctx, save_y - reaper.ImGui_GetTextLineHeightWithSpacing(ctx))
-    reaper.ImGui_SetCursorPosX(ctx, win_w - pad_x - 90)
+    reaper.ImGui_SameLine(ctx)
+    reaper.ImGui_Dummy(ctx, full_w - reaper.ImGui_GetCursorPosX(ctx) - 82, 0)
+    reaper.ImGui_SameLine(ctx)
     reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 2, 2)
     local changed
     changed, autoplay_enabled = reaper.ImGui_Checkbox(ctx, "Autoplay", autoplay_enabled)
     if changed then save_state() end
     reaper.ImGui_PopStyleVar(ctx)
-    reaper.ImGui_SetCursorPosY(ctx, save_y)
   end
 end
 
