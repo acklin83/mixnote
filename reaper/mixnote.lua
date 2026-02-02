@@ -820,19 +820,19 @@ local function draw_song_version_section()
     reaper.ImGui_SameLine(ctx)
     reaper.ImGui_TextColored(ctx, C.amber, "(!)")
   end
+
+  -- Autoplay toggle (right-aligned on same line)
+  if share_link ~= "" and selected_version_idx > 0 then
+    local avail_w = reaper.ImGui_GetContentRegionAvail(ctx)
+    reaper.ImGui_SameLine(ctx, reaper.ImGui_GetContentRegionMax(ctx) - 80)
+    local changed
+    changed, autoplay_enabled = reaper.ImGui_Checkbox(ctx, "Autoplay", autoplay_enabled)
+    if changed then save_state() end
+  end
 end
 
 local function draw_waveform_section()
   if share_link == "" or selected_version_idx == 0 or #waveform_peaks == 0 then return end
-
-  reaper.ImGui_Spacing(ctx)
-  reaper.ImGui_Separator(ctx)
-  reaper.ImGui_Spacing(ctx)
-
-  -- Autoplay toggle
-  local changed
-  changed, autoplay_enabled = reaper.ImGui_Checkbox(ctx, "Autoplay", autoplay_enabled)
-  if changed then save_state() end
 
   reaper.ImGui_Spacing(ctx)
 
@@ -877,15 +877,33 @@ local function draw_waveform_section()
     end
   end
 
-  -- Comment markers
+  -- Comment markers + tooltip
   local offset = get_current_offset()
+  local mouse_x, mouse_y = reaper.ImGui_GetMousePos(ctx)
+  local is_hovered = reaper.ImGui_IsItemHovered(ctx)
+  local hovered_comment = nil
+
   for _, c in ipairs(comments) do
     if c.timecode and c.timecode >= 0 and waveform_duration > 0 and c.timecode <= waveform_duration then
       local mx = wx + (c.timecode / waveform_duration) * wf_w
       local mcol = c.solved and C.green or C.amber
       reaper.ImGui_DrawList_AddLine(dl, mx, wy, mx, wy + wf_h, mcol, 2)
       reaper.ImGui_DrawList_AddCircleFilled(dl, mx, wy + 5, 4, mcol)
+
+      -- Check hover (±6px)
+      if is_hovered and math.abs(mouse_x - mx) < 6 then
+        hovered_comment = c
+      end
     end
+  end
+
+  if hovered_comment then
+    reaper.ImGui_BeginTooltip(ctx)
+    reaper.ImGui_TextColored(ctx, C.accent, "@" .. format_timecode(hovered_comment.timecode))
+    reaper.ImGui_SameLine(ctx)
+    reaper.ImGui_TextColored(ctx, C.text_dim, hovered_comment.author_name or "")
+    reaper.ImGui_TextWrapped(ctx, hovered_comment.text or "")
+    reaper.ImGui_EndTooltip(ctx)
   end
 
   -- Playhead (real-time REAPER cursor position)
