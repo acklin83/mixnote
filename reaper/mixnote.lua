@@ -774,7 +774,7 @@ local function draw_song_version_section()
   local versions = current_song and current_song.versions or {}
   local current_ver = versions[selected_version_idx]
   local ver_label = current_ver and ("v" .. tostring(current_ver.version_number)) or "v?"
-  reaper.ImGui_SetNextItemWidth(ctx, logged_in and -30 or -1)
+  reaper.ImGui_SetNextItemWidth(ctx, logged_in and -35 or -1)
   if reaper.ImGui_BeginCombo(ctx, "##version", ver_label) then
     for i, ver in ipairs(versions) do
       local label = "v" .. tostring(ver.version_number)
@@ -821,10 +821,11 @@ local function draw_song_version_section()
     reaper.ImGui_TextColored(ctx, C.amber, "(!)")
   end
 
-  -- Autoplay toggle (on same line after offset controls)
+  -- Autoplay toggle (right-aligned on offset line)
   if share_link ~= "" and selected_version_idx > 0 then
-    reaper.ImGui_SameLine(ctx)
     reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 2, 2)
+    reaper.ImGui_SameLine(ctx)
+    reaper.ImGui_SetCursorPosX(ctx, full_w - 78)
     local changed
     changed, autoplay_enabled = reaper.ImGui_Checkbox(ctx, "Autoplay", autoplay_enabled)
     if changed then save_state() end
