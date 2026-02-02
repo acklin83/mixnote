@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
+from ..audio_utils import get_or_generate_peaks
 from ..auth import get_project_by_share_link
 from ..database import get_db
 from ..models import Comment, Project, Song, Version
@@ -99,3 +100,24 @@ def stream_audio(
         media_type=media_type,
         filename=version.original_filename,
     )
+
+
+@router.get("/api/versions/{version_id}/peaks")
+def get_version_peaks(
+    version_id: int,
+    db: Session = Depends(get_db),
+):
+    """Get waveform peak data for a version. Generated lazily and cached."""
+    version = db.query(Version).filter(Version.id == version_id).first()
+    if version is None:
+        raise HTTPException(status_code=404, detail="Version not found")
+    if not os.path.isfile(version.file_path):
+        raise HTTPException(status_code=404, detail="Audio file not found")
+
+    base = os.path.splitext(version.file_path)[0]
+    cache_path = f"{base}.peaks.json"
+
+    try:
+        return get_or_generate_peaks(version.file_path, cache_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Peak generation failed: {e}")

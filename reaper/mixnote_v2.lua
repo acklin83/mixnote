@@ -241,6 +241,11 @@ local edit_text = ""
 
 local filter_mode = 0
 
+-- Waveform state
+local waveform_peaks = {}
+local waveform_duration = 0
+local autoplay_enabled = reaper.GetExtState("Mixnote", "autoplay") ~= "false"
+
 ---------------------------------------------------------------------------
 -- Theme colors (matching Mixnote website dark theme)
 ---------------------------------------------------------------------------
@@ -366,6 +371,7 @@ local function save_state()
   else
     reaper.DeleteExtState("Mixnote", "password", true)
   end
+  reaper.SetExtState("Mixnote", "autoplay", tostring(autoplay_enabled), true)
 end
 
 local function link_project()
@@ -451,6 +457,7 @@ local function api_load_project()
     load_calibration_offsets()
     if selected_version_idx > 0 then
       api_load_comments()
+      api_load_peaks()
     else
       comments = {}
     end
@@ -617,6 +624,24 @@ local function api_delete_comment(comment_id)
   end
 end
 
+local function api_load_peaks()
+  waveform_peaks = {}
+  waveform_duration = 0
+  if share_link == "" or selected_song_idx == 0 or selected_version_idx == 0 then return end
+  local song = songs[selected_song_idx]
+  local ver = song and song.versions and song.versions[selected_version_idx]
+  if not ver then return end
+  local url = server_url .. "/api/versions/" .. tostring(ver.id) .. "/peaks"
+  local status, resp = http_request("GET", url)
+  if status == 200 then
+    local data = json.decode(resp)
+    if data and data.peaks and data.duration then
+      waveform_peaks = data.peaks
+      waveform_duration = data.duration
+    end
+  end
+end
+
 ---------------------------------------------------------------------------
 -- UI Drawing
 ---------------------------------------------------------------------------
@@ -641,6 +666,8 @@ local function draw_login_section()
       reply_comment_id = nil
       new_comment_text = ""
       error_msg = ""
+      waveform_peaks = {}
+      waveform_duration = 0
     end
     reaper.ImGui_SameLine(ctx)
     reaper.ImGui_TextColored(ctx, C.text_muted, server_url)
@@ -737,6 +764,7 @@ local function draw_song_version_section()
           if ver.favourite then selected_version_idx = vi; break end
         end
         api_load_comments()
+        api_load_peaks()
       end
     end
     reaper.ImGui_EndCombo(ctx)
@@ -756,6 +784,7 @@ local function draw_song_version_section()
       if reaper.ImGui_Selectable(ctx, label, i == selected_version_idx) then
         selected_version_idx = i
         api_load_comments()
+        api_load_peaks()
       end
     end
     reaper.ImGui_EndCombo(ctx)
@@ -790,6 +819,94 @@ local function draw_song_version_section()
   if offset == 0 then
     reaper.ImGui_SameLine(ctx)
     reaper.ImGui_TextColored(ctx, C.amber, "(!)")
+  end
+end
+
+local function draw_waveform_section()
+  if share_link == "" or selected_version_idx == 0 or #waveform_peaks == 0 then return end
+
+  reaper.ImGui_Spacing(ctx)
+  reaper.ImGui_Separator(ctx)
+  reaper.ImGui_Spacing(ctx)
+
+  -- Autoplay toggle
+  local changed
+  changed, autoplay_enabled = reaper.ImGui_Checkbox(ctx, "Autoplay", autoplay_enabled)
+  if changed then save_state() end
+
+  reaper.ImGui_Spacing(ctx)
+
+  -- Waveform dimensions
+  local wf_h = 100
+  local wf_w = reaper.ImGui_GetContentRegionAvail(ctx)
+  local wx, wy = reaper.ImGui_GetCursorScreenPos(ctx)
+
+  -- Invisible button for click detection
+  reaper.ImGui_InvisibleButton(ctx, "##waveform", wf_w, wf_h)
+  local is_clicked = reaper.ImGui_IsItemClicked(ctx, 0)
+
+  local dl = reaper.ImGui_GetWindowDrawList(ctx)
+
+  -- Background
+  reaper.ImGui_DrawList_AddRectFilled(dl, wx, wy, wx + wf_w, wy + wf_h, C.bg_input, 4)
+
+  -- Waveform bars
+  local bar_count = #waveform_peaks
+  local bar_w = wf_w / bar_count
+  local center_y = wy + wf_h / 2
+
+  for i, peak in ipairs(waveform_peaks) do
+    local x = wx + (i - 1) * bar_w
+    local h = peak * (wf_h * 0.45)
+    if h > 0.5 then
+      reaper.ImGui_DrawList_AddRectFilled(dl,
+        x, center_y - h,
+        x + bar_w - 1, center_y + h,
+        C.accent, 0)
+    end
+  end
+
+  -- Comment markers
+  local offset = get_current_offset()
+  for _, c in ipairs(comments) do
+    if c.timecode and c.timecode >= 0 and waveform_duration > 0 and c.timecode <= waveform_duration then
+      local mx = wx + (c.timecode / waveform_duration) * wf_w
+      local mcol = c.solved and C.green or C.amber
+      reaper.ImGui_DrawList_AddLine(dl, mx, wy, mx, wy + wf_h, mcol, 2)
+      reaper.ImGui_DrawList_AddCircleFilled(dl, mx, wy + 5, 4, mcol)
+    end
+  end
+
+  -- Playhead (real-time REAPER cursor position)
+  local cursor_pos = reaper.GetCursorPosition()
+  -- If playing, use play position instead
+  local play_state = reaper.GetPlayState()
+  if play_state ~= 0 then
+    cursor_pos = reaper.GetPlayPosition()
+  end
+  local rel_pos = cursor_pos - offset
+
+  if waveform_duration > 0 and rel_pos >= 0 and rel_pos <= waveform_duration then
+    local px = wx + (rel_pos / waveform_duration) * wf_w
+    reaper.ImGui_DrawList_AddLine(dl, px, wy, px, wy + wf_h, 0xFFFFFFFF, 2)
+    reaper.ImGui_DrawList_AddTriangleFilled(dl,
+      px, wy,
+      px - 5, wy - 6,
+      px + 5, wy - 6,
+      0xFFFFFFFF)
+  end
+
+  -- Click to seek
+  if is_clicked and waveform_duration > 0 then
+    local mx = reaper.ImGui_GetMousePos(ctx)
+    local ratio = (mx - wx) / wf_w
+    ratio = math.max(0, math.min(1, ratio))
+    local target_tc = ratio * waveform_duration
+    reaper.SetEditCurPos(offset + target_tc, true, true)
+    if autoplay_enabled then
+      local state = reaper.GetPlayState()
+      if state == 0 then reaper.OnPlayButton() end
+    end
   end
 end
 
@@ -881,8 +998,10 @@ local function draw_comments_section()
         if reaper.ImGui_SmallButton(ctx, "@" .. format_timecode(c.timecode)) then
           local target = offset + c.timecode
           reaper.SetEditCurPos(target, true, true)
-          local state = reaper.GetPlayState()
-          if state == 0 then reaper.OnPlayButton() end
+          if autoplay_enabled then
+            local state = reaper.GetPlayState()
+            if state == 0 then reaper.OnPlayButton() end
+          end
         end
         reaper.ImGui_PopStyleColor(ctx, 4)
 
@@ -1045,6 +1164,7 @@ local function loop()
     draw_login_section()
     draw_project_section()
     draw_song_version_section()
+    draw_waveform_section()
     draw_new_comment_section()
     draw_comments_section()
     reaper.ImGui_End(ctx)
@@ -1062,6 +1182,7 @@ if is_linked and share_link_input ~= "" then
   api_load_project()
   if selected_version_idx > 0 then
     api_load_comments()
+    api_load_peaks()
   end
 end
 
