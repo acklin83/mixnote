@@ -434,6 +434,24 @@ local function load_calibration_offsets()
   end
 end
 
+local function api_load_peaks()
+  waveform_peaks = {}
+  waveform_duration = 0
+  if share_link == "" or selected_song_idx == 0 or selected_version_idx == 0 then return end
+  local song = songs[selected_song_idx]
+  local ver = song and song.versions and song.versions[selected_version_idx]
+  if not ver then return end
+  local url = server_url .. "/api/versions/" .. tostring(ver.id) .. "/peaks"
+  local status, resp = http_request("GET", url)
+  if status == 200 then
+    local data = json.decode(resp)
+    if data and data.peaks and data.duration then
+      waveform_peaks = data.peaks
+      waveform_duration = data.duration
+    end
+  end
+end
+
 local function api_load_project()
   error_msg = ""
   loading = true
@@ -621,24 +639,6 @@ local function api_delete_comment(comment_id)
     api_load_comments()
   else
     error_msg = "Failed to delete comment (HTTP " .. tostring(status) .. ")"
-  end
-end
-
-local function api_load_peaks()
-  waveform_peaks = {}
-  waveform_duration = 0
-  if share_link == "" or selected_song_idx == 0 or selected_version_idx == 0 then return end
-  local song = songs[selected_song_idx]
-  local ver = song and song.versions and song.versions[selected_version_idx]
-  if not ver then return end
-  local url = server_url .. "/api/versions/" .. tostring(ver.id) .. "/peaks"
-  local status, resp = http_request("GET", url)
-  if status == 200 then
-    local data = json.decode(resp)
-    if data and data.peaks and data.duration then
-      waveform_peaks = data.peaks
-      waveform_duration = data.duration
-    end
   end
 end
 
