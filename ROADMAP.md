@@ -18,3 +18,5 @@
 - [ ] Link-Ablaufdatum (Share Links mit Expiration)
 - [ ] Mobile App
 - [ ] mixnote.lua für ReaPack parat machen (in Documents/reaper-scripts)
+- [ ] Regionen statt nur Timestamps (Waveform-Bereich markieren, z.B. 0:15–0:35, in Client + REAPER Lua)
+- [ ] Alternative Layout-Ansicht (Waveform sticky oben, Versionen rechts, Kommentare unten)
