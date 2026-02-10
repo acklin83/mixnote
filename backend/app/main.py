@@ -37,6 +37,7 @@ def _migrate_db():
         "ALTER TABLE app_settings ADD COLUMN email_api_domain TEXT",
         "ALTER TABLE projects ADD COLUMN notification_email TEXT",
         "ALTER TABLE projects ADD COLUMN email_template_id INTEGER REFERENCES email_templates(id)",
+        "ALTER TABLE projects ADD COLUMN notifications_enabled BOOLEAN DEFAULT 1",
     ]
     for sql in migrations:
         try:
@@ -48,16 +49,17 @@ def _migrate_db():
 
 
 def _seed_default_template():
-    """Insert default email template if none exist."""
+    """Insert default email templates if none exist."""
     db = SessionLocal()
     try:
         if db.query(EmailTemplate).count() == 0:
-            tpl = EmailTemplate(
-                name="Standard-Benachrichtigung",
+            # German template
+            tpl_de = EmailTemplate(
+                name="Standard-Benachrichtigung (Deutsch)",
                 subject="Neuer {{ 'Reply' if is_reply else 'Kommentar' }} – {{ project_title }} / {{ song_title }}",
                 body_html="""<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-  <h2 style="color: #6366f1; margin-bottom: 4px;">{{ project_title }}</h2>
-  <p style="color: #888; margin-top: 0;">{{ song_title }} &middot; v{{ version_number }} {{ version_label }}</p>
+  <p style="font-size: 16px; font-weight: bold; color: #6366f1; margin: 0 0 4px 0;">{{ project_title }}</p>
+  <p style="color: #888; margin-top: 0; font-size: 14px;">{{ song_title }} &middot; v{{ version_number }} {{ version_label }}</p>
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;">
   {% if is_reply %}
   <p style="color: #888; font-size: 14px;">Antwort auf Kommentar von <strong>{{ parent_comment_author }}</strong>:</p>
@@ -66,15 +68,37 @@ def _seed_default_template():
   </div>
   {% endif %}
   <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0;">
-    <p style="margin: 0 0 8px 0;"><strong>{{ author_name }}</strong> <span style="color: #888; font-size: 13px;">@ {{ timecode }}</span></p>
+    <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>{{ author_name }}</strong> <span style="color: #888; font-size: 13px;">@ {{ timecode }}</span></p>
     <p style="margin: 0; font-size: 15px;">{{ comment_text }}</p>
   </div>
-  <p><a href="{{ share_url }}" style="color: #6366f1; text-decoration: none;">In Mixnote &ouml;ffnen &rarr;</a></p>
+  <p style="font-size: 14px;"><a href="{{ share_url }}" style="color: #6366f1; text-decoration: none;">In Mixnote &ouml;ffnen &rarr;</a></p>
 </div>""",
             )
-            db.add(tpl)
+            # English template
+            tpl_en = EmailTemplate(
+                name="Standard Notification (English)",
+                subject="New {{ 'Reply' if is_reply else 'Comment' }} – {{ project_title }} / {{ song_title }}",
+                body_html="""<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <p style="font-size: 16px; font-weight: bold; color: #6366f1; margin: 0 0 4px 0;">{{ project_title }}</p>
+  <p style="color: #888; margin-top: 0; font-size: 14px;">{{ song_title }} &middot; v{{ version_number }} {{ version_label }}</p>
+  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;">
+  {% if is_reply %}
+  <p style="color: #888; font-size: 14px;">Reply to comment by <strong>{{ parent_comment_author }}</strong>:</p>
+  <div style="border-left: 3px solid #6366f1; padding-left: 12px; margin: 8px 0; color: #666; font-size: 14px;">
+    {{ parent_comment_text }}
+  </div>
+  {% endif %}
+  <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0;">
+    <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>{{ author_name }}</strong> <span style="color: #888; font-size: 13px;">@ {{ timecode }}</span></p>
+    <p style="margin: 0; font-size: 15px;">{{ comment_text }}</p>
+  </div>
+  <p style="font-size: 14px;"><a href="{{ share_url }}" style="color: #6366f1; text-decoration: none;">Open in Mixnote &rarr;</a></p>
+</div>""",
+            )
+            db.add(tpl_de)
+            db.add(tpl_en)
             db.commit()
-            logger.info("Seeded default email template")
+            logger.info("Seeded default email templates (DE + EN)")
     finally:
         db.close()
 

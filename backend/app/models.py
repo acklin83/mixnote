@@ -37,6 +37,7 @@ class Project(Base):
     share_link: Mapped[str] = mapped_column(String(12), unique=True, index=True, default=_short_uuid)
     notification_email: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
     email_template_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("email_templates.id", ondelete="SET NULL"), nullable=True, default=None)
+    notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 

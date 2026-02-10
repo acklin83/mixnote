@@ -87,7 +87,12 @@ async function showProjects() {
     <div class="bg-dark-800 rounded-lg p-4 flex items-center justify-between cursor-pointer hover:bg-dark-700 transition"
          onclick="openProject('${p.id}')">
       <div>
-        <div class="font-medium">${esc(p.title)}</div>
+        <div class="flex items-center gap-2">
+          <span class="font-medium">${esc(p.title)}</span>
+          <span class="text-xs ${p.notifications_enabled ? 'text-green-500' : 'text-gray-600'}" title="${p.notifications_enabled ? 'Notifications enabled' : 'Notifications disabled'}">
+            ${p.notifications_enabled ? '🔔' : '🔕'}
+          </span>
+        </div>
         <div class="text-sm text-gray-500 mt-1">
           ${p.song_count} song${p.song_count !== 1 ? 's' : ''} · ${p.comment_count} comment${p.comment_count !== 1 ? 's' : ''} · ${formatDate(p.created_at)}
         </div>
@@ -850,6 +855,7 @@ $('tpl-preview-btn').addEventListener('click', async () => {
 // ============================================================
 async function populateProjectEmailFields() {
   if (!currentProject) return;
+  $('project-notifications-enabled').checked = currentProject.notifications_enabled !== false;
   $('project-notify-email').value = currentProject.notification_email || '';
   // Load templates for dropdown
   try { emailTemplates = await api('/admin/email-templates'); } catch { emailTemplates = []; }
@@ -863,12 +869,15 @@ $('save-project-email-btn').addEventListener('click', async () => {
     await api(`/admin/projects/${currentProject.id}`, {
       method: 'PUT',
       json: {
+        notifications_enabled: $('project-notifications-enabled').checked,
         notification_email: $('project-notify-email').value.trim(),
         email_template_id: parseInt($('project-email-template').value) || 0,
       },
     });
     $('save-project-email-btn').textContent = 'Saved!';
     setTimeout(() => $('save-project-email-btn').textContent = 'Save', 1500);
+    // Refresh project to update badge in list
+    currentProject = await api(`/admin/projects/${currentProject.id}`);
   } catch (err) { alert(err.message); }
 });
 

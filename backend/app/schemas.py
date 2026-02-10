@@ -29,6 +29,7 @@ class ProjectUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     notification_email: str | None = None
     email_template_id: int | None = None
+    notifications_enabled: bool | None = None
 
 
 class ProjectSummary(BaseModel):
@@ -37,6 +38,7 @@ class ProjectSummary(BaseModel):
     share_link: str
     song_count: int
     comment_count: int
+    notifications_enabled: bool = True
     created_at: datetime
     updated_at: datetime
 
@@ -49,6 +51,7 @@ class ProjectDetail(BaseModel):
     share_link: str
     notification_email: str | None = None
     email_template_id: int | None = None
+    notifications_enabled: bool = True
     created_at: datetime
     updated_at: datetime
     songs: list["SongOut"]

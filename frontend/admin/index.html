@@ -112,6 +112,10 @@
       </div>
       <!-- Project Email Settings -->
       <div class="bg-dark-800 rounded-lg p-4 mb-4">
+        <div class="flex items-center gap-2 mb-3">
+          <input id="project-notifications-enabled" type="checkbox" checked class="w-4 h-4 accent-indigo-500">
+          <label class="text-sm font-medium">Enable email notifications for this project</label>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
           <div>
             <label class="block text-xs text-gray-500 mb-1">Notification E-Mail (optional)</label>
@@ -271,9 +275,7 @@
           <input id="color-light-waveform-progress" type="color" class="w-12 h-8 rounded cursor-pointer bg-transparent border-0">
         </div>
         <div class="flex items-center gap-3 mt-6 pt-6 border-t border-dark-700">
-          <button id="save-settings-btn" class="px-4 py-2 bg-accent hover:bg-indigo-600 rounded text-sm font-medium transition">Save Changes</button>
           <button id="reset-colors-btn" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded text-sm transition">Reset to Defaults</button>
-          <span id="save-status" class="text-sm text-green-400"></span>
         </div>
       </div>
 
@@ -388,6 +390,12 @@
         <div id="templates-list" class="space-y-2"></div>
         <div id="templates-empty" class="hidden text-center text-gray-500 py-6 text-sm">No templates.</div>
         <p class="text-xs text-gray-500 mt-3">Available placeholders: <code>{{ project_title }}</code>, <code>{{ song_title }}</code>, <code>{{ version_label }}</code>, <code>{{ version_number }}</code>, <code>{{ author_name }}</code>, <code>{{ comment_text }}</code>, <code>{{ timecode }}</code>, <code>{{ share_url }}</code>, <code>{{ is_reply }}</code>, <code>{{ parent_comment_text }}</code>, <code>{{ parent_comment_author }}</code></p>
+      </div>
+
+      <!-- Save Settings Button (at bottom) -->
+      <div class="flex items-center gap-3 mt-6 pt-6 border-t border-dark-700">
+        <button id="save-settings-btn" class="px-4 py-2 bg-accent hover:bg-indigo-600 rounded text-sm font-medium transition">Save Changes</button>
+        <span id="save-status" class="text-sm text-green-400"></span>
       </div>
     </div>
   </div>

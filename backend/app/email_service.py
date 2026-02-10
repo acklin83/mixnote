@@ -218,6 +218,11 @@ async def send_comment_notification(comment_id: int, reply_id: int | None, base_
         if not project:
             return
 
+        # Check if notifications are enabled for this project
+        if not project.notifications_enabled:
+            logger.debug(f"Notifications disabled for project {project.id}, skipping")
+            return
+
         recipient = _get_recipient_email(project, settings)
         if not recipient:
             logger.debug("No recipient email configured, skipping notification")

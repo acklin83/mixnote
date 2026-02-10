@@ -506,6 +506,21 @@ A ReaImGui-based script for managing Mixnote comments directly from REAPER.
   - `EMAIL_DELIVERABILITY.md` — NEW: Complete deliverability setup guide
   - `README.md` — Email notifications section with link to guide
 
+### 2026-02-10: Email Templates & Project Notification Toggle
+- **Changes:**
+  1. **Dual default templates**: Added English template alongside German one (seeded on startup)
+  2. **Per-project notification toggle**: New `notifications_enabled` boolean field on Project model (default: true). Checkbox in project detail view controls email notifications per project.
+  3. **Settings UI improvement**: "Save Changes" button moved to bottom of Settings view (after Email Templates section)
+  4. **Project list badge**: Notification icon (🔔/🔕) shows enabled/disabled status per project
+  5. **Email service check**: `send_comment_notification` now respects `project.notifications_enabled` flag
+- **Files modified:**
+  - `backend/app/main.py` — Seed both DE+EN templates, migration for `notifications_enabled`
+  - `backend/app/models.py` — Added `notifications_enabled` field to Project
+  - `backend/app/schemas.py` — ProjectUpdate, ProjectSummary, ProjectDetail extended
+  - `backend/app/email_service.py` — Check `project.notifications_enabled` before sending
+  - `frontend/admin/index.html` — Checkbox in project email settings, "Save Changes" button moved to bottom
+  - `frontend/admin/js/admin.js` — Project list badge, save/load notifications_enabled
+
 ## Development Notes
 - Prefer simple, maintainable solutions over complex frameworks
 - Direct, efficient code - no unnecessary abstractions
