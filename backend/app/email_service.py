@@ -264,22 +264,37 @@ async def _send_batched_notifications(project_id: str, base_url: str):
         if not comments_by_song:
             return
 
-        # Build final email: group comments per song with separator between songs
+        # Build final email: group comments per song with song header
         song_sections = []
         total_comments = sum(len(comments) for comments in comments_by_song.values())
 
         for song_id, song_comments in comments_by_song.items():
-            # Comments within same song: minimal spacing (direct stack)
-            song_html = ''.join(html for _, html in song_comments)
-            song_sections.append(song_html)
+            song_title = song_comments[0][0]  # Get song title from first comment
+            comment_count = len(song_comments)
 
-        # Songs separated by larger divider
-        if len(song_sections) == 1:
+            # Song header
+            song_header = f'''<div style="margin: 24px 0 16px 0;">
+                <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #e5e7eb; border-bottom: 2px solid #4f46e5; padding-bottom: 8px;">
+                    {song_title} <span style="font-size: 14px; font-weight: 400; color: #9ca3af;">({comment_count} {'comment' if comment_count == 1 else 'comments'})</span>
+                </h2>
+            </div>'''
+
+            # Comments within same song: direct stack
+            comments_html = ''.join(html for _, html in song_comments)
+            song_sections.append(song_header + comments_html)
+
+        # Build subject and body
+        if total_comments == 1:
             subject = f"New comment – {project.title}"
-            body = song_sections[0]
         else:
             subject = f"{total_comments} new comments – {project.title}"
-            body = '<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">'.join(song_sections)
+
+        # Wrap in container and join song sections
+        body = '''<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a1a; padding: 32px 16px; color: #e5e7eb;">
+            <div style="max-width: 600px; margin: 0 auto;">
+                ''' + ''.join(song_sections) + '''
+            </div>
+        </div>'''
 
         await send_notification(settings, recipient, subject, body)
 
@@ -287,6 +302,16 @@ async def _send_batched_notifications(project_id: str, base_url: str):
         logger.exception("Batched email notification failed")
     finally:
         db.close()
+
+
+async def _batch_timer_task(project_id: str, delay_seconds: int, base_url: str):
+    """Async task that waits and then sends batched notifications."""
+    try:
+        await asyncio.sleep(delay_seconds)
+        await _send_batched_notifications(project_id, base_url)
+    except asyncio.CancelledError:
+        # Timer cancelled, another comment came in
+        pass
 
 
 async def send_comment_notification(comment_id: int, reply_id: int | None, base_url: str):
@@ -338,10 +363,9 @@ async def send_comment_notification(comment_id: int, reply_id: int | None, base_
 
             # Cancel existing timer if any
             if project_id in _batch_queue and "timer" in _batch_queue[project_id]:
-                try:
-                    _batch_queue[project_id]["timer"].cancel()
-                except:
-                    pass
+                old_timer = _batch_queue[project_id]["timer"]
+                if old_timer and not old_timer.done():
+                    old_timer.cancel()
 
             # Add comment to batch queue
             if project_id not in _batch_queue:
@@ -349,14 +373,11 @@ async def send_comment_notification(comment_id: int, reply_id: int | None, base_
 
             _batch_queue[project_id]["comments"].append((comment_id, reply_id))
 
-            # Schedule batch send
+            # Schedule NEW batch send timer (fire and forget)
             delay_seconds = settings.email_batch_delay_minutes * 60
-            timer = asyncio.create_task(asyncio.sleep(delay_seconds))
+            timer = asyncio.create_task(_batch_timer_task(project_id, delay_seconds, base_url))
             _batch_queue[project_id]["timer"] = timer
-
-            # Wait and send
-            await timer
-            await _send_batched_notifications(project_id, base_url)
+            logger.debug(f"Batched comment {comment_id}, will send in {delay_seconds}s")
         else:
             # Send immediately
             template = None
@@ -372,9 +393,6 @@ async def send_comment_notification(comment_id: int, reply_id: int | None, base_
             subject, html_body = render_template(template, context)
             await send_notification(settings, recipient, subject, html_body)
 
-    except asyncio.CancelledError:
-        # Timer was cancelled, normal behavior
-        pass
     except Exception:
         logger.exception("Email notification failed")
     finally:
