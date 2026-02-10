@@ -513,7 +513,10 @@ async function loadAppSettings() {
 async function loadAdminSettings() {
   try {
     adminSettings = await api('/admin/settings');
-  } catch { adminSettings = null; }
+  } catch (err) {
+    console.error('loadAdminSettings failed:', err);
+    adminSettings = null;
+  }
 }
 
 function getThemeColors(s) {
@@ -633,8 +636,8 @@ function populateSettingsUI() {
     // Share from-address/name between SMTP and API fields
     $('api-from-address').value = adminSettings.smtp_from_address || '';
     $('api-from-name').value = adminSettings.smtp_from_name || 'Mixnote';
-    updateProviderFields();
   }
+  updateProviderFields();
 }
 
 function updateProviderFields() {
@@ -763,7 +766,7 @@ let emailTemplates = [];
 let editingTemplateId = null;
 
 async function loadTemplatesList() {
-  try { emailTemplates = await api('/admin/email-templates'); } catch { emailTemplates = []; }
+  try { emailTemplates = await api('/admin/email-templates'); } catch (err) { console.error('loadTemplatesList failed:', err); emailTemplates = []; }
   if (emailTemplates.length === 0) {
     $('templates-list').innerHTML = ''; $('templates-empty').classList.remove('hidden'); return;
   }

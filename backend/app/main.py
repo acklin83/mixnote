@@ -79,8 +79,8 @@ def _seed_default_template():
         db.close()
 
 
-_migrate_db()
 Base.metadata.create_all(bind=engine)
+_migrate_db()
 _seed_default_template()
 
 app = FastAPI(title="Mixnote", version="0.1.0")
