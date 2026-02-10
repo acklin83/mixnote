@@ -70,7 +70,7 @@ def _send_smtp(settings: AppSettings, to: str, subject: str, html_body: str):
     msg.attach(MIMEText(html_body, "html"))
 
     try:
-        server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30)
+        server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=60)
         if settings.smtp_use_tls:
             server.starttls()
         if settings.smtp_username and settings.smtp_password:
@@ -89,7 +89,7 @@ def _send_smtp(settings: AppSettings, to: str, subject: str, html_body: str):
 
 async def _send_sendgrid(settings: AppSettings, to: str, subject: str, html_body: str):
     """Send via SendGrid v3 REST API."""
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(
             "https://api.sendgrid.com/v3/mail/send",
             headers={
@@ -113,7 +113,7 @@ async def _send_sendgrid(settings: AppSettings, to: str, subject: str, html_body
 async def _send_mailgun(settings: AppSettings, to: str, subject: str, html_body: str):
     """Send via Mailgun REST API."""
     domain = settings.email_api_domain
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(
             f"https://api.mailgun.net/v3/{domain}/messages",
             auth=("api", settings.email_api_key),
