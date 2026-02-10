@@ -186,6 +186,13 @@ Mixnote can send email notifications when new comments or replies are posted. Se
 4. **Important:** Set up SPF/DKIM/DMARC DNS records to avoid spam folder (see guide)
 5. Test with "Send Test Email" button
 
+**Features:**
+- **Batch mode**: Optionally wait X minutes after last comment before sending (combines multiple comments into one email)
+- **Song grouping**: Batched emails group comments by song with clear section headers
+- **Admin filter**: Comments from admin users never trigger notifications (prevents self-notifications)
+- **Per-project control**: Enable/disable notifications individually per project
+- **Custom templates**: Create multiple email templates with Jinja2 syntax (DE + EN defaults included)
+
 **Recommended:** Use SendGrid or Mailgun for best deliverability. Self-hosted SMTP often ends up in spam without proper DNS configuration.
 
 ## Tech Stack

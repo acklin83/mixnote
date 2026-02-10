@@ -540,10 +540,12 @@ A ReaImGui-based script for managing Mixnote comments directly from REAPER.
 ### 2026-02-10: Template Migration & Batch Email Grouping
 - **Changes:**
   1. **English template migration**: Auto-adds English template to existing DBs that only have German template (one-time migration on startup)
-  2. **Batch email grouping**: Comments grouped by song in batched emails. Comments within same song directly stacked (minimal spacing), songs separated by divider.
+  2. **Batch email grouping**: Comments grouped by song in batched emails. Song header with title + comment count, comment cards stacked below without repetitive song/version info. Light theme matching original templates (#f9fafb cards, #6366f1 accent).
+  3. **Fire-and-forget timer**: Fixed batch timer to run as separate async task (prevents multiple emails). Timer cancelled on new comments, restarted with fresh delay.
+  4. **Custom batch email format**: Batched emails use custom HTML (not template rendering) to avoid repetitive metadata. Clean layout with project title, song sections, version info inline with timecode.
 - **Files modified:**
   - `backend/app/main.py` — Template migration for existing DBs
-  - `backend/app/email_service.py` — Group comments by song in batch emails
+  - `backend/app/email_service.py` — Song-grouped batch emails, fire-and-forget timer task, custom HTML generation
 
 ## Development Notes
 - Prefer simple, maintainable solutions over complex frameworks
