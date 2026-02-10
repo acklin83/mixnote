@@ -257,9 +257,22 @@ async def _send_batched_notifications(project_id: str, base_url: str):
             if not version or not song:
                 continue
 
-            context = build_notification_context(project, song, version, comment, reply, base_url)
-            _, item_html = render_template(template, context)
-            comments_by_song[song.id].append((song.title, item_html))
+            # Build comment card (without song/version info for batched emails)
+            is_reply = reply is not None
+            author = reply.author_name if is_reply else comment.author_name
+            text = reply.text if is_reply else comment.text
+            timecode = _format_time(comment.timecode)
+
+            comment_card = f'''<div style="background: #1f1f1f; border-left: 3px solid #4f46e5; border-radius: 6px; padding: 16px; margin-bottom: 12px;">
+                <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #e5e7eb;">{author}</p>
+                <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.6; color: #f3f4f6; white-space: pre-wrap;">{text}</p>
+                <div style="display: flex; gap: 16px; align-items: center; margin-top: 12px;">
+                    <span style="display: inline-block; background: #374151; color: #9ca3af; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-family: 'Courier New', monospace;">{timecode}</span>
+                    <span style="font-size: 13px; color: #9ca3af;">v{version.version_number}{f" ({version.label})" if version.label else ""}</span>
+                </div>
+            </div>'''
+
+            comments_by_song[song.id].append((song.title, comment_card))
 
         if not comments_by_song:
             return
@@ -269,17 +282,17 @@ async def _send_batched_notifications(project_id: str, base_url: str):
         total_comments = sum(len(comments) for comments in comments_by_song.values())
 
         for song_id, song_comments in comments_by_song.items():
-            song_title = song_comments[0][0]  # Get song title from first comment
+            song_title = song_comments[0][0]
             comment_count = len(song_comments)
 
-            # Song header
-            song_header = f'''<div style="margin: 24px 0 16px 0;">
+            # Song header (dark theme)
+            song_header = f'''<div style="margin: 24px 0 12px 0;">
                 <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #e5e7eb; border-bottom: 2px solid #4f46e5; padding-bottom: 8px;">
-                    {song_title} <span style="font-size: 14px; font-weight: 400; color: #9ca3af;">({comment_count} {'comment' if comment_count == 1 else 'comments'})</span>
+                    {song_title} <span style="font-size: 14px; font-weight: 400; color: #6b7280;">({comment_count} {'comment' if comment_count == 1 else 'comments'})</span>
                 </h2>
             </div>'''
 
-            # Comments within same song: direct stack
+            # Comment cards stacked
             comments_html = ''.join(html for _, html in song_comments)
             song_sections.append(song_header + comments_html)
 
@@ -289,10 +302,21 @@ async def _send_batched_notifications(project_id: str, base_url: str):
         else:
             subject = f"{total_comments} new comments – {project.title}"
 
-        # Wrap in container and join song sections
-        body = '''<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a1a; padding: 32px 16px; color: #e5e7eb;">
-            <div style="max-width: 600px; margin: 0 auto;">
-                ''' + ''.join(song_sections) + '''
+        # Email wrapper (dark theme like original template)
+        body = f'''<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a1a; padding: 32px 16px; color: #e5e7eb;">
+            <div style="max-width: 600px; margin: 0 auto; background: #2d2d2d; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                <div style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); padding: 24px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: white;">{project.title}</h1>
+                </div>
+                <div style="padding: 24px;">
+                    {''.join(song_sections)}
+                    <div style="text-align: center; margin-top: 24px;">
+                        <a href="{base_url}/{project.share_link}" style="display: inline-block; background: #4f46e5; color: white; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 2px 8px rgba(79,70,229,0.3);">Open Project</a>
+                    </div>
+                </div>
+                <div style="background: #1a1a1a; padding: 16px 24px; text-align: center; border-top: 1px solid #374151;">
+                    <p style="margin: 0; font-size: 12px; color: #6b7280;">Mixnote Audio Review Platform</p>
+                </div>
             </div>
         </div>'''
 
