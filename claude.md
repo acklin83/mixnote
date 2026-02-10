@@ -455,6 +455,18 @@ A ReaImGui-based script for managing Mixnote comments directly from REAPER.
   - `backend/app/routers/projects.py` — peaks endpoint
   - `reaper/mixnote.lua` — waveform, autoplay, tooltips, layout
 
+### 2026-02-10: Light-Mode Fix
+- **Changes:**
+  1. **Light-mode text colors**: Added CSS overrides for `text-gray-200` through `text-gray-600` to map to dark equivalents in light mode.
+  2. **Hover colors**: `hover:text-white` remapped to dark color in light mode.
+  3. **Reply box background**: Hardcoded `background:#2d2d2d` overridden to `bg700` in light mode.
+  4. **Waveform live update**: Theme toggle now updates WaveSurfer colors (waveColor, progressColor, cursorColor) without reload.
+  5. **Created `ROADMAP.md`**: Consolidated project status and future plans.
+- **Files modified:**
+  - `frontend/admin/js/admin.js` — light-mode CSS overrides, waveform theme update
+  - `frontend/client/js/client.js` — light-mode CSS overrides, waveform theme update
+  - `ROADMAP.md` — NEW
+
 ## Development Notes
 - Prefer simple, maintainable solutions over complex frameworks
 - Direct, efficient code - no unnecessary abstractions

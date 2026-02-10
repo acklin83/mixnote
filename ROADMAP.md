@@ -12,8 +12,9 @@
 
 ## V2 — To Do
 
-- [ ] Light-Mode Fix (Client-Ansicht sieht im Light-Mode kaputt aus)
+- [x] Light-Mode Fix (Text- und Hintergrundfarben, Waveform-Farben bei Theme-Wechsel)
 - [ ] Email-Benachrichtigungen bei neuen Kommentaren
 - [ ] Real-time Updates (WebSocket)
 - [ ] Link-Ablaufdatum (Share Links mit Expiration)
 - [ ] Mobile App
+- [ ] mixnote.lua für ReaPack parat machen (in Documents/reaper-scripts)
