@@ -251,9 +251,9 @@ async def send_test_email(settings: AppSettings, to: str) -> str | None:
             to,
             "Mixnote Test-E-Mail",
             """<div style="font-family: -apple-system, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto;">
-  <h2 style="color: #6366f1;">Mixnote</h2>
-  <p>E-Mail-Versand funktioniert! &#127881;</p>
-  <p style="color: #888; font-size: 13px;">Provider: {}</p>
+  <p style="font-size: 16px; font-weight: bold; color: #333; margin: 0 0 12px 0;">Mixnote</p>
+  <p style="font-size: 14px; color: #333; margin: 0 0 8px 0;">E-Mail-Versand funktioniert! &#127881;</p>
+  <p style="font-size: 12px; color: #888; margin: 0;">Provider: {}</p>
 </div>""".format(settings.email_provider),
         )
         return None
