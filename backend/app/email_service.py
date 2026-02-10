@@ -62,27 +62,34 @@ def _get_recipient_email(project: Project, settings: AppSettings) -> str | None:
 
 def _send_smtp(settings: AppSettings, to: str, subject: str, html_body: str):
     """Send via SMTP (blocking, run in thread)."""
+    from_addr = settings.smtp_from_address or settings.smtp_username
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = f"{settings.smtp_from_name} <{settings.smtp_from_address or settings.smtp_username}>"
+    msg["From"] = f"{settings.smtp_from_name} <{from_addr}>"
     msg["To"] = to
     msg.attach(MIMEText(html_body, "html"))
 
-    if settings.smtp_use_tls:
-        server = smtplib.SMTP(settings.smtp_host, settings.smtp_port)
-        server.starttls()
-    else:
-        server = smtplib.SMTP(settings.smtp_host, settings.smtp_port)
-
-    if settings.smtp_username and settings.smtp_password:
-        server.login(settings.smtp_username, settings.smtp_password)
-    server.sendmail(msg["From"], [to], msg.as_string())
-    server.quit()
+    try:
+        server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30)
+        if settings.smtp_use_tls:
+            server.starttls()
+        if settings.smtp_username and settings.smtp_password:
+            server.login(settings.smtp_username, settings.smtp_password)
+        server.sendmail(from_addr, [to], msg.as_string())
+        server.quit()
+    except smtplib.SMTPAuthenticationError:
+        raise RuntimeError("SMTP authentication failed – check username/password")
+    except smtplib.SMTPConnectError:
+        raise RuntimeError(f"Could not connect to SMTP server {settings.smtp_host}:{settings.smtp_port}")
+    except smtplib.SMTPException as e:
+        raise RuntimeError(f"SMTP error: {e}")
+    except OSError as e:
+        raise RuntimeError(f"Network error connecting to SMTP server: {e}")
 
 
 async def _send_sendgrid(settings: AppSettings, to: str, subject: str, html_body: str):
     """Send via SendGrid v3 REST API."""
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(
             "https://api.sendgrid.com/v3/mail/send",
             headers={
@@ -100,13 +107,13 @@ async def _send_sendgrid(settings: AppSettings, to: str, subject: str, html_body
             },
         )
         if resp.status_code not in (200, 201, 202):
-            logger.error(f"SendGrid error {resp.status_code}: {resp.text}")
+            raise RuntimeError(f"SendGrid error {resp.status_code}: {resp.text}")
 
 
 async def _send_mailgun(settings: AppSettings, to: str, subject: str, html_body: str):
     """Send via Mailgun REST API."""
     domain = settings.email_api_domain
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(
             f"https://api.mailgun.net/v3/{domain}/messages",
             auth=("api", settings.email_api_key),
@@ -118,7 +125,7 @@ async def _send_mailgun(settings: AppSettings, to: str, subject: str, html_body:
             },
         )
         if resp.status_code != 200:
-            logger.error(f"Mailgun error {resp.status_code}: {resp.text}")
+            raise RuntimeError(f"Mailgun error {resp.status_code}: {resp.text}")
 
 
 async def send_notification(settings: AppSettings, to: str, subject: str, html_body: str):
@@ -146,19 +153,19 @@ async def send_comment_notification(comment_id: int, reply_id: int | None, base_
         if settings.email_provider == "none":
             return
 
-        comment = db.query(Comment).get(comment_id)
+        comment = db.get(Comment, comment_id)
         if not comment:
             return
 
-        reply = db.query(Reply).get(reply_id) if reply_id else None
+        reply = db.get(Reply, reply_id) if reply_id else None
 
-        version = db.query(Version).get(comment.version_id)
+        version = db.get(Version, comment.version_id)
         if not version:
             return
-        song = db.query(Song).get(version.song_id)
+        song = db.get(Song, version.song_id)
         if not song:
             return
-        project = db.query(Project).get(song.project_id)
+        project = db.get(Project, song.project_id)
         if not project:
             return
 
@@ -170,7 +177,7 @@ async def send_comment_notification(comment_id: int, reply_id: int | None, base_
         # Get template: project-specific or first available (default)
         template = None
         if project.email_template_id:
-            template = db.query(EmailTemplate).get(project.email_template_id)
+            template = db.get(EmailTemplate, project.email_template_id)
         if not template:
             template = db.query(EmailTemplate).first()
         if not template:

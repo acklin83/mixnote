@@ -13,7 +13,7 @@ from ..auth import (
     verify_password,
 )
 from ..database import get_db
-from ..email_service import build_notification_context, render_template
+from ..email_service import render_template
 from ..models import AdminUser, Comment, EmailTemplate, Project, Song, Version
 from ..schemas import (
     CommentOut,
