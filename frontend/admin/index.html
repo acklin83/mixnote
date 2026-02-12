@@ -110,8 +110,16 @@
           <button id="delete-project-btn" class="text-sm text-red-400 hover:text-red-300 transition shrink-0">Delete</button>
         </div>
       </div>
+
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">Songs</h3>
+        <button id="add-song-btn" class="px-3 py-1.5 bg-dark-700 hover:bg-dark-600 rounded text-sm transition">+ Add Song</button>
+      </div>
+      <div id="songs-list" class="space-y-2"></div>
+      <div id="songs-empty" class="hidden text-center text-gray-500 py-8 text-sm">No songs yet. Add a song to start.</div>
+
       <!-- Project Email Settings -->
-      <div id="project-email-settings" class="bg-dark-800 rounded-lg p-4 mb-4 hidden">
+      <div id="project-email-settings" class="bg-dark-800 rounded-lg p-4 mt-4 hidden">
         <div class="flex items-center gap-2 mb-3">
           <input id="project-notifications-enabled" type="checkbox" checked class="w-4 h-4 accent-indigo-500">
           <label class="text-sm font-medium">Enable email notifications for this project</label>
@@ -131,13 +139,6 @@
           <button id="save-project-email-btn" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded text-sm transition h-[38px]">Save</button>
         </div>
       </div>
-
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">Songs</h3>
-        <button id="add-song-btn" class="px-3 py-1.5 bg-dark-700 hover:bg-dark-600 rounded text-sm transition">+ Add Song</button>
-      </div>
-      <div id="songs-list" class="space-y-2"></div>
-      <div id="songs-empty" class="hidden text-center text-gray-500 py-8 text-sm">No songs yet. Add a song to start.</div>
     </div>
 
     <!-- View 3: Song Detail (2-column: player+versions | comments) -->
