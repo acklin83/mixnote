@@ -2,6 +2,14 @@
 
 namespace mixnote {
 
+// Helper to build a JSON object from key-value pairs
+static juce::String makeJsonObject(std::initializer_list<std::pair<juce::String, juce::var>> props) {
+    auto* obj = new juce::DynamicObject();
+    for (auto& p : props)
+        obj->setProperty(p.first, p.second);
+    return juce::JSON::toString(juce::var(obj));
+}
+
 MixnoteApi::MixnoteApi() {}
 
 MixnoteApi::~MixnoteApi() {
@@ -31,19 +39,18 @@ MixnoteApi::HttpResponse MixnoteApi::httpRequest(const juce::String& method,
     if (body.isNotEmpty() && (method == "POST" || method == "PUT" || method == "PATCH"))
         url = url.withPOSTData(body);
 
-    int statusCode = 0;
-    auto options = juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inAddress)
-                       .withHttpRequestCmd(method)
-                       .withConnectionTimeoutMs(10000);
-
-    // Add headers
     juce::String headers = "Content-Type: application/json\r\n";
     if (jwtToken.isNotEmpty())
         headers += "Authorization: Bearer " + jwtToken + "\r\n";
-    options = options.withExtraHeaders(headers);
+
+    auto options = juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inAddress)
+                       .withHttpRequestCmd(method)
+                       .withConnectionTimeoutMs(10000)
+                       .withExtraHeaders(headers);
 
     if (auto stream = url.createInputStream(options)) {
-        result.statusCode = stream->getStatusCode();
+        if (auto* webStream = dynamic_cast<juce::WebInputStream*>(stream.get()))
+            result.statusCode = webStream->getStatusCode();
         result.body = stream->readEntireStreamAsString();
     }
 
@@ -76,10 +83,10 @@ MixnoteApi::HttpResponse MixnoteApi::httpDelete(const juce::String& endpoint) {
 
 void MixnoteApi::login(const juce::String& username, const juce::String& password, LoginCallback callback) {
     threadPool.addJob([this, username, password, cb = std::move(callback)]() {
-        auto body = juce::JSON::toString(juce::var(new juce::DynamicObject({
+        auto body = makeJsonObject({
             { "username", username },
             { "password", password }
-        })));
+        });
 
         auto resp = httpPost("/admin/auth/login", body);
 
@@ -162,12 +169,12 @@ void MixnoteApi::loadComments(const juce::String& shareLink, int versionId, Comm
 void MixnoteApi::createComment(const juce::String& shareLink, int versionId, double timecode,
                                 const juce::String& authorName, const juce::String& text, SimpleCallback callback) {
     threadPool.addJob([this, shareLink, versionId, timecode, authorName, text, cb = std::move(callback)]() {
-        auto body = juce::JSON::toString(juce::var(new juce::DynamicObject({
+        auto body = makeJsonObject({
             { "version_id", versionId },
             { "timecode", timecode },
             { "author_name", authorName },
             { "text", text }
-        })));
+        });
 
         auto resp = httpPost("/api/projects/" + shareLink + "/comments", body);
 
@@ -181,10 +188,10 @@ void MixnoteApi::createComment(const juce::String& shareLink, int versionId, dou
 void MixnoteApi::replyToComment(const juce::String& shareLink, int commentId,
                                  const juce::String& authorName, const juce::String& text, SimpleCallback callback) {
     threadPool.addJob([this, shareLink, commentId, authorName, text, cb = std::move(callback)]() {
-        auto body = juce::JSON::toString(juce::var(new juce::DynamicObject({
+        auto body = makeJsonObject({
             { "author_name", authorName },
             { "text", text }
-        })));
+        });
 
         auto resp = httpPost("/api/projects/" + shareLink + "/comments/" + juce::String(commentId) + "/reply", body);
 
@@ -208,9 +215,9 @@ void MixnoteApi::resolveComment(const juce::String& shareLink, int commentId, Si
 
 void MixnoteApi::updateComment(int commentId, const juce::String& text, SimpleCallback callback) {
     threadPool.addJob([this, commentId, text, cb = std::move(callback)]() {
-        auto body = juce::JSON::toString(juce::var(new juce::DynamicObject({
+        auto body = makeJsonObject({
             { "text", text }
-        })));
+        });
 
         auto resp = httpPut("/admin/comments/" + juce::String(commentId), body);
 
