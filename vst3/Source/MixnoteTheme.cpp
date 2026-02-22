@@ -116,7 +116,7 @@ void MixnoteLookAndFeel::drawPopupMenuItem(juce::Graphics& g, const juce::Rectan
     g.drawFittedText(text, area.reduced(8, 0), juce::Justification::centredLeft, 1);
 
     if (isTicked) {
-        auto tickArea = area.removeFromRight(area.getHeight()).reduced(6);
+        auto tickArea = area.withTrimmedLeft(area.getWidth() - area.getHeight()).reduced(6);
         g.setColour(Theme::accent());
         g.fillEllipse(tickArea.toFloat());
     }
