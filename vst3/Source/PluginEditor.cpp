@@ -72,9 +72,7 @@ MixnoteEditor::MixnoteEditor(MixnoteProcessor& p)
     // --- Waveform ---
     addChildComponent(waveform);
     waveform.onSeek = [this](double timecode) {
-        // VST3 cannot control DAW transport directly.
-        // We show the timecode in the comment input field for reference.
-        updateTimecodeDisplay();
+        seekTo(timecode);
     };
 
     // --- New comment ---
@@ -90,8 +88,8 @@ MixnoteEditor::MixnoteEditor(MixnoteProcessor& p)
 
     // --- Comment list ---
     addChildComponent(commentList);
-    commentList.onTimecodeClick = [this](double) {
-        // Transport control not available in VST3
+    commentList.onTimecodeClick = [this](double timecode) {
+        seekTo(timecode);
     };
     commentList.onResolve = [this](int commentId) {
         if (!loggedIn || activeShareLink.isEmpty()) return;
@@ -625,13 +623,39 @@ const Version* MixnoteEditor::getSelectedVersion() const {
 }
 
 // ---------------------------------------------------------------------------
+// Seek — move waveform cursor to a timecode position
+// ---------------------------------------------------------------------------
+
+void MixnoteEditor::seekTo(double relativeTimecode) {
+    double offset = getCurrentOffset();
+    manualSeekPos = relativeTimecode + offset;
+
+    // Update waveform playhead immediately
+    waveform.setPlayheadPosition(manualSeekPos);
+
+    // Update timecode display with the clicked position
+    timecodeLabel.setText("@" + formatTimecode(relativeTimecode), juce::dontSendNotification);
+}
+
+// ---------------------------------------------------------------------------
 // Timer — update playhead + timecode display
 // ---------------------------------------------------------------------------
 
 void MixnoteEditor::timerCallback() {
+    bool playing = processorRef.isTransportPlaying();
     double pos = processorRef.getTransportPositionSeconds();
-    waveform.setPlayheadPosition(pos);
-    updateTimecodeDisplay();
+
+    if (playing) {
+        // Transport is running — follow DAW cursor, clear manual seek
+        manualSeekPos = -1.0;
+        waveform.setPlayheadPosition(pos);
+        updateTimecodeDisplay();
+    } else if (manualSeekPos < 0.0) {
+        // Stopped, no manual seek — show transport position
+        waveform.setPlayheadPosition(pos);
+        updateTimecodeDisplay();
+    }
+    // else: stopped + manual seek active — keep showing the clicked position
 }
 
 // ---------------------------------------------------------------------------

@@ -104,6 +104,11 @@ private:
     const mixnote::Song* getSelectedSong() const;
     const mixnote::Version* getSelectedVersion() const;
 
+    // Seek: stores clicked timecode (absolute) when transport is stopped
+    double manualSeekPos = -1.0;
+
+    void seekTo(double relativeTimecode);
+
     // Timer for playhead updates
     void timerCallback() override;
 
