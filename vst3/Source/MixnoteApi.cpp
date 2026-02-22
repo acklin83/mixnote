@@ -17,7 +17,17 @@ MixnoteApi::~MixnoteApi() {
 }
 
 void MixnoteApi::setServerUrl(const juce::String& url) {
-    serverUrl = url.trimCharactersAtEnd("/");
+    auto trimmed = url.trim().trimCharactersAtEnd("/");
+
+    // Ensure the URL has a protocol prefix
+    if (trimmed.isNotEmpty()
+        && !trimmed.startsWithIgnoreCase("http://")
+        && !trimmed.startsWithIgnoreCase("https://"))
+    {
+        trimmed = "https://" + trimmed;
+    }
+
+    serverUrl = trimmed;
 }
 
 juce::String MixnoteApi::getServerUrl() const { return serverUrl; }

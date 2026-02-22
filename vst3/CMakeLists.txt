@@ -4,10 +4,17 @@ project(MixnotePlugin VERSION 1.0.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# macOS: Build universal binary (Apple Silicon + Intel)
+# macOS settings
 if(APPLE)
-    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build universal binary")
     set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
+    # Universal binary when using Xcode generator, native arch for Makefiles
+    if(CMAKE_GENERATOR STREQUAL "Xcode")
+        set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build universal binary")
+    else()
+        # Detect native architecture to avoid Rosetta builds
+        execute_process(COMMAND uname -m OUTPUT_VARIABLE HOST_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+        set(CMAKE_OSX_ARCHITECTURES "${HOST_ARCH}" CACHE STRING "Build for native architecture")
+    endif()
 endif()
 
 # Fetch JUCE
