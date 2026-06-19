@@ -6,3 +6,6 @@ __pycache__/
 data/database/
 data/uploads/
 data/static/
+
+# Spec for a separate project (Studio OS) — not part of Mixnote
+STUDIO_OS_SPEC.md

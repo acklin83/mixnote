@@ -1,3 +1,20 @@
+-- @description Mixnote Comments
+-- @author Störsender-Studio
+-- @version 1.0
+-- @provides [main] .
+-- @link GitHub https://github.com/acklin83/mixnote
+-- @changelog
+--   Initial ReaPack release
+-- @about
+--   # Mixnote Comments
+--
+--   REAPER integration for the Mixnote audio review platform. Load a project
+--   by share link, view the waveform with comment markers, and create, reply
+--   to, resolve, edit or delete timeline comments directly from REAPER.
+--
+--   Requires the ReaImGui extension (install via ReaPack). Configure your
+--   Mixnote server URL and log in inside the script.
+--
 -- Mixnote Comments v2 - REAPER Integration Script
 -- Requires ReaImGui (install via ReaPack)
 -- Connects to Mixnote API for comment management

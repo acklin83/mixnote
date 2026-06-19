@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import get_current_admin
 from ..database import get_db
+from ..ratelimit import limiter
 from ..email_service import send_comment_notification
 from ..models import AppSettings, Comment, Project, Reply, Song, Version
 from ..schemas import CommentCreate, CommentOut, CommentUpdate, ReplyCreate, ReplyOut
@@ -53,6 +54,7 @@ def get_comments(
 
 
 @router.post("/api/projects/{share_link}/comments", response_model=CommentOut, status_code=201)
+@limiter.limit("30/minute")
 def create_comment(
     share_link: str,
     req: CommentCreate,
@@ -89,6 +91,7 @@ def create_comment(
 
 
 @router.post("/api/projects/{share_link}/comments/{comment_id}/reply", response_model=ReplyOut, status_code=201)
+@limiter.limit("30/minute")
 def reply_to_comment(
     share_link: str,
     comment_id: int,

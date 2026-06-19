@@ -576,6 +576,16 @@ function applySettings(s) {
   // Logo
   const logo = $('header-logo');
   const text = $('header-text');
+  // Site name + favicon
+  const name = s.site_name || 'Mixnote';
+  document.title = name + ' Admin';
+  text.textContent = name + ' Admin';
+  const loginTitle = $('login-title');
+  if (loginTitle) loginTitle.textContent = name;
+  if (s.favicon_url) {
+    const fav = document.getElementById('favicon');
+    if (fav) fav.href = s.favicon_url + '?t=' + Date.now();
+  }
   if (s.logo_url) {
     logo.src = s.logo_url + '?t=' + Date.now();
     logo.style.height = (s.logo_height || 32) + 'px';
@@ -621,6 +631,17 @@ function populateSettingsUI() {
     $('logo-img').classList.add('hidden'); $('logo-placeholder').classList.remove('hidden');
     $('delete-logo-btn').classList.add('hidden');
     $('logo-size-control').classList.add('hidden');
+  }
+  // Site name
+  $('site-name').value = appSettings.site_name || 'Mixnote';
+  // Favicon
+  if (appSettings.favicon_url) {
+    $('favicon-img').src = appSettings.favicon_url + '?t=' + Date.now();
+    $('favicon-img').classList.remove('hidden'); $('favicon-placeholder').classList.add('hidden');
+    $('delete-favicon-btn').classList.remove('hidden');
+  } else {
+    $('favicon-img').classList.add('hidden'); $('favicon-placeholder').classList.remove('hidden');
+    $('delete-favicon-btn').classList.add('hidden');
   }
   // Email settings
   if (adminSettings) {
@@ -681,6 +702,7 @@ $('save-settings-btn').addEventListener('click', async () => {
   COLOR_FIELDS.forEach(f => { data[f] = $(fieldToInputId(f)).value; });
   LIGHT_COLOR_FIELDS.forEach(f => { data[f] = $(fieldToInputId(f)).value; });
   data.logo_height = parseInt($('logo-size').value);
+  data.site_name = $('site-name').value.trim() || 'Mixnote';
   // Email settings
   data.email_notifications_enabled = $('email-enabled').checked;
   data.email_provider = $('email-provider').value;
@@ -740,6 +762,31 @@ $('delete-logo-btn').addEventListener('click', async () => {
   applySettings(appSettings);
   $('logo-img').classList.add('hidden'); $('logo-placeholder').classList.remove('hidden');
   $('delete-logo-btn').classList.add('hidden');
+});
+
+// Favicon upload
+$('upload-favicon-btn').addEventListener('click', () => $('favicon-file-input').click());
+$('favicon-file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    const res = await fetch('/admin/settings/favicon', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.detail || 'Upload failed'); }
+    appSettings = await res.json();
+    applySettings(appSettings);
+    populateSettingsUI();
+  } catch (err) { alert(err.message); }
+  $('favicon-file-input').value = '';
+});
+
+$('delete-favicon-btn').addEventListener('click', async () => {
+  if (!confirm('Remove favicon?')) return;
+  await api('/admin/settings/favicon', { method: 'DELETE' });
+  appSettings = await (await fetch('/api/settings')).json();
+  applySettings(appSettings);
+  $('favicon-img').classList.add('hidden'); $('favicon-placeholder').classList.remove('hidden');
+  $('delete-favicon-btn').classList.add('hidden');
 });
 
 // Theme toggle

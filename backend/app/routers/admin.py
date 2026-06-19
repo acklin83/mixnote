@@ -2,10 +2,11 @@ import os
 import shutil
 import uuid
 
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
+from ..ratelimit import limiter
 from ..auth import (
     create_access_token,
     get_current_admin,
@@ -48,7 +49,8 @@ def auth_status(db: Session = Depends(get_db)):
 
 
 @router.post("/auth/setup", response_model=TokenResponse)
-def setup(req: SetupRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def setup(request: Request, req: SetupRequest, db: Session = Depends(get_db)):
     if db.query(AdminUser).first() is not None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Admin already configured")
     user = AdminUser(username=req.username, password_hash=hash_password(req.password))
@@ -58,7 +60,8 @@ def setup(req: SetupRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/auth/login", response_model=TokenResponse)
-def login(req: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(AdminUser).filter(AdminUser.username == req.username).first()
     if user is None or not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")

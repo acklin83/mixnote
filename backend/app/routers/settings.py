@@ -15,6 +15,8 @@ router = APIRouter(tags=["settings"])
 
 LOGO_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "uploads", "logo")
 ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
+FAVICON_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "uploads", "favicon")
+ALLOWED_FAVICON_EXTENSIONS = {".png", ".ico", ".svg"}
 
 
 def _get_or_create_settings(db: Session) -> AppSettings:
@@ -29,6 +31,7 @@ def _get_or_create_settings(db: Session) -> AppSettings:
 
 def _to_settings_out(settings: AppSettings) -> dict:
     logo_url = "/api/logo" if settings.logo_path and os.path.isfile(settings.logo_path) else None
+    favicon_url = "/api/favicon" if settings.favicon_path and os.path.isfile(settings.favicon_path) else None
     return {
         "accent_color": settings.accent_color,
         "dark_900": settings.dark_900,
@@ -48,6 +51,8 @@ def _to_settings_out(settings: AppSettings) -> dict:
         "light_waveform_progress_color": settings.light_waveform_progress_color or "#4f46e5",
         "logo_url": logo_url,
         "logo_height": settings.logo_height,
+        "site_name": settings.site_name or "Mixnote",
+        "favicon_url": favicon_url,
         "clients_can_resolve": settings.clients_can_resolve,
     }
 
@@ -110,7 +115,7 @@ def update_settings(
         "text_color", "waveform_color", "waveform_progress_color",
         "light_accent_color", "light_bg_900", "light_bg_800", "light_bg_700", "light_bg_600",
         "light_text_color", "light_waveform_color", "light_waveform_progress_color",
-        "logo_height", "clients_can_resolve",
+        "logo_height", "site_name", "clients_can_resolve",
     ] + EMAIL_FIELDS:
         value = getattr(req, field, None)
         if value is not None:
@@ -196,3 +201,59 @@ def get_logo(db: Session = Depends(get_db)):
     ext = os.path.splitext(settings.logo_path)[1].lower()
     media = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}.get(ext, "image/png")
     return FileResponse(settings.logo_path, media_type=media)
+
+
+@router.post("/admin/settings/favicon", response_model=SettingsOut)
+def upload_favicon(
+    file: UploadFile = File(...),
+    _admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_FAVICON_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Only PNG, ICO and SVG favicons allowed")
+
+    # Check size (1MB max)
+    file.file.seek(0, 2)
+    size = file.file.tell()
+    file.file.seek(0)
+    if size > 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Favicon must be under 1MB")
+
+    settings = _get_or_create_settings(db)
+
+    # Delete old favicon (extension may differ)
+    if settings.favicon_path and os.path.isfile(settings.favicon_path):
+        os.remove(settings.favicon_path)
+
+    os.makedirs(FAVICON_DIR, exist_ok=True)
+    dest = os.path.join(FAVICON_DIR, f"favicon{ext}")
+    with open(dest, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    settings.favicon_path = dest
+    db.commit()
+    db.refresh(settings)
+    return _to_settings_out(settings)
+
+
+@router.delete("/admin/settings/favicon", status_code=status.HTTP_204_NO_CONTENT)
+def delete_favicon(
+    _admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    settings = _get_or_create_settings(db)
+    if settings.favicon_path and os.path.isfile(settings.favicon_path):
+        os.remove(settings.favicon_path)
+    settings.favicon_path = None
+    db.commit()
+
+
+@router.get("/api/favicon")
+def get_favicon(db: Session = Depends(get_db)):
+    settings = _get_or_create_settings(db)
+    if not settings.favicon_path or not os.path.isfile(settings.favicon_path):
+        raise HTTPException(status_code=404, detail="No favicon set")
+    ext = os.path.splitext(settings.favicon_path)[1].lower()
+    media = {".png": "image/png", ".ico": "image/x-icon", ".svg": "image/svg+xml"}.get(ext, "image/png")
+    return FileResponse(settings.favicon_path, media_type=media)

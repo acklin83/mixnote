@@ -562,6 +562,40 @@ A ReaImGui-based script for managing Mixnote comments directly from REAPER.
   - `backend/app/main.py` — Template migration for existing DBs
   - `backend/app/email_service.py` — Song-grouped batch emails, fire-and-forget timer task, custom HTML generation
 
+### 2026-06-19: Open-Source Publishing Prep — Branding Gaps + Packaging
+- **Goal:** Mixnote für andere REAPER-User veröffentlichen — self-hosted, open source, white-label-fähig.
+- **Branch:** `publish/branding-and-oss`
+- **Branding-Lücken geschlossen** (White-Labeling jetzt vollständig):
+  1. `site_name` (AppSettings) — ersetzt hartkodiertes "Mixnote" in `<title>`, Admin-Header, Admin-Login-`<h1>`. Per Admin-Settings editierbar.
+  2. **Favicon-Upload** (PNG/ICO/SVG, max 1 MB) — analog zum Logo-Upload. Endpoints `POST/DELETE /admin/settings/favicon`, `GET /api/favicon`. Dynamisch via `<link id="favicon">` + `applySettings()`.
+  3. Migration additiv + idempotent (`site_name TEXT DEFAULT 'Mixnote'`, `favicon_path TEXT`) — Defaults = bisheriges Aussehen, **Live-Instanz ändert sich optisch nicht** bis manuell gesetzt.
+- **Packaging:** `.env.example` (Secret-Key-Generierung dokumentiert), `nginx.conf` `server_name _` (generisch statt `mix.stoersender.ch`), `.gitignore` schließt `STUDIO_OS_SPEC.md` aus (Spec eines anderen Projekts, nicht Teil von Mixnote).
+- **Files modified:** `backend/app/models.py`, `backend/app/main.py` (Migration), `backend/app/schemas.py`, `backend/app/routers/settings.py`, `frontend/admin/index.html`, `frontend/admin/js/admin.js`, `frontend/client/index.html`, `frontend/client/js/client.js`, `nginx/nginx.conf`, `.gitignore`, `.env.example` (NEU)
+- **NOCH OFFEN (braucht Frank-Entscheidung, bewusst nicht erledigt):**
+  - **LICENSE**: GPLv3 empfohlen (JUCE-Pflicht fürs VST3) — JUCE-Terms vor Release an der Quelle verifizieren, nicht aus Gedächtnis.
+  - ~~Git-History-Scrub von `claude.md`~~ — HINFÄLLIG: `claude.md` IST die Projektdoku (= `CLAUDE.md`, case-insensitive macOS), kein sensibler Inhalt. Bleibt public. Kein Scrub nötig.
+  - Prebuilt Images (ghcr.io + Actions), Caddy-Compose für Auto-HTTPS, generisches README, Rate-Limiting, ReaPack-Repo für `mixnote.lua`, VST3-Release.
+
+### 2026-06-19: Distribution — Prebuilt Images + Caddy Auto-HTTPS + README
+- **Wichtig:** Backend löst `FRONTEND_DIR` auf `/frontend` auf (Live-/Dev-Setup mountet `./frontend:/frontend`). Für prebuilt Images muss das Frontend INS Image gebacken werden, sonst kein UI ohne Repo-Checkout.
+- **`Dockerfile.dist`** (NEU, Root-Context): Backend → `/app`, Frontend → `/frontend`. Nur für Distribution; `backend/Dockerfile` + Volume-Mount bleiben fürs Dev-/Live-Setup unangetastet.
+- **`.github/workflows/docker-publish.yml`** (NEU): baut + pusht bei Tag `v*` (oder manuell) zwei Images nach ghcr.io — `mixnote-backend` (via Dockerfile.dist) und `mixnote-nginx`. `permissions: packages: write`, semver + latest Tags.
+- **`docker-compose.ghcr.yml`** (NEU): prebuilt Images, kein Build/Checkout. `MIXNOTE_SECRET_KEY` via `:?` erzwungen. Kein Frontend-Volume (gebacken).
+- **`docker-compose.caddy.yml`** + **`Caddyfile`** (NEU): Caddy davor, automatisches Let's-Encrypt-HTTPS für `MIXNOTE_DOMAIN`. Ports 80/443. Einfachste „Zugriff von außen"-Lösung für Self-Hoster ohne NAS.
+- **README**: Sektionen „Prebuilt images", „Automatic HTTPS with Caddy", „Configuration", „Branding". `.env.example` um `MIXNOTE_DOMAIN` erweitert.
+- **Validiert:** alle 3 Compose-Files `docker compose config -q` OK.
+- **Files:** `Dockerfile.dist`, `.github/workflows/docker-publish.yml`, `docker-compose.ghcr.yml`, `docker-compose.caddy.yml`, `Caddyfile`, `.env.example`, `README.md`, `ROADMAP.md` (alle NEU bzw. erweitert)
+- **Image-Namespace** hängt an `github.repository` = `acklin83/mixnote` → `ghcr.io/acklin83/mixnote-{backend,nginx}`. Bei Repo-Umzug Pfade in den Compose-Files + README anpassen.
+
+### 2026-06-19: License (AGPLv3) + Rate-Limiting + ReaPack + VST3-Release
+- **Lizenz an der Quelle verifiziert (nicht aus Gedächtnis):** JUCEs kostenlose Option ist **AGPLv3** (nicht GPLv3!). VST3 SDK ist seit 2025 **MIT** (Steinberg-Dual-Lizenz abgeschafft). → Repo unter **AGPLv3** (`LICENSE` = kanonischer Text von gnu.org, `LICENSING.md` erklärt Komponenten + AGPL §13 Netzwerk-Klausel). README License-Sektion.
+- **Rate-Limiting (`slowapi==0.1.9`):** neues Modul `backend/app/ratelimit.py` (`limiter`, key_func bevorzugt `X-Forwarded-For` hinter Proxy). In `main.py` `app.state.limiter` + RateLimitExceeded-Handler. Decorators: Login `10/minute`, Setup `5/minute`, create_comment + reply `30/minute`. Endpoints brauchen `request: Request` (Comments hatten's schon, Login/Setup ergänzt).
+- **ReaPack:** `reaper/mixnote.lua` mit `@description/@author/@version/@provides/@link/@about`-Header versehen. Eigentliches ReaPack-Repo + index.xml-Action = separater Schritt (Roadmap: `Documents/reaper-scripts`).
+- **VST3-Release:** `.github/workflows/vst3-release.yml` — macOS-Runner baut universal (CMake forced arm64;x86_64), zippt `.vst3` (zip -y für Bundle-Symlinks), hängt's bei Tag `v*` an GitHub Release. Plugin PRODUCT_NAME "Mixnote", JUCE 8.0.6 via FetchContent.
+- **Files:** `LICENSE` (NEU), `LICENSING.md` (NEU), `backend/app/ratelimit.py` (NEU), `.github/workflows/vst3-release.yml` (NEU), `backend/requirements.txt`, `backend/app/main.py`, `backend/app/routers/admin.py`, `backend/app/routers/comments.py`, `reaper/mixnote.lua`, `README.md`, `ROADMAP.md`
+- **Korrektur (kein Scrub nötig):** Repo-`claude.md` = `CLAUDE.md` (case-insensitive macOS) = die Mixnote-Projektdoku, NICHT die privaten Team-Instructions (die liegen in `~/.claude/CLAUDE.md`, außerhalb des Repos). Kein sensibler Inhalt → bleibt public, kein History-Rewrite. `STUDIO_OS_SPEC.md` (Spec eines anderen Projekts, nicht sensibel) normal via `git rm` entfernt + gitignored.
+- **NOCH OFFEN:** Repo public schalten, erster `v*`-Tag pushen → baut ghcr-Images + VST3.
+
 ## Development Notes
 - Prefer simple, maintainable solutions over complex frameworks
 - Direct, efficient code - no unnecessary abstractions

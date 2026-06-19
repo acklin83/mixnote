@@ -6,9 +6,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from .database import Base, engine, SessionLocal
 from .models import EmailTemplate
+from .ratelimit import limiter
 from .routers import admin, comments, projects, settings
 
 logger = logging.getLogger(__name__)
@@ -40,6 +43,8 @@ def _migrate_db():
         "ALTER TABLE projects ADD COLUMN notifications_enabled BOOLEAN DEFAULT 1",
         "ALTER TABLE app_settings ADD COLUMN email_batch_enabled BOOLEAN DEFAULT 0",
         "ALTER TABLE app_settings ADD COLUMN email_batch_delay_minutes INTEGER DEFAULT 5",
+        "ALTER TABLE app_settings ADD COLUMN site_name TEXT DEFAULT 'Mixnote'",
+        "ALTER TABLE app_settings ADD COLUMN favicon_path TEXT",
     ]
     for sql in migrations:
         try:
@@ -140,6 +145,10 @@ _migrate_db()
 _seed_default_template()
 
 app = FastAPI(title="Mixnote", version="0.1.0")
+
+# Rate limiting (per client IP, respecting X-Forwarded-For behind a proxy)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

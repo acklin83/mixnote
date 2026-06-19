@@ -1,0 +1,17 @@
+# Distribution image: backend + frontend baked in (no repo checkout needed).
+# Used by the GitHub Actions release workflow to publish to ghcr.io.
+# The dev setup uses backend/Dockerfile + a ./frontend volume mount instead.
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Backend code -> /app/app, frontend -> /frontend (matches FRONTEND_DIR resolution)
+COPY backend/ .
+COPY frontend/ /frontend
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "75"]

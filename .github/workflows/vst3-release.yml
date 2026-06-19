@@ -1,0 +1,44 @@
+name: Build VST3 plugin
+
+# Builds the universal (arm64 + x86_64) macOS VST3 and attaches it to the
+# GitHub Release on a version tag. JUCE and the VST3 SDK are fetched by CMake.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B vst3/build -S vst3 -G Xcode
+
+      - name: Build (Release, universal)
+        run: cmake --build vst3/build --config Release
+
+      - name: Package .vst3 bundle
+        run: |
+          BUNDLE="$(find vst3/build -name '*.vst3' -type d | head -n1)"
+          if [ -z "$BUNDLE" ]; then echo "No .vst3 bundle found"; exit 1; fi
+          echo "Found: $BUNDLE"
+          # -y preserves the symlinks inside the macOS bundle
+          ( cd "$(dirname "$BUNDLE")" && zip -r -y "$GITHUB_WORKSPACE/Mixnote-macOS-universal.vst3.zip" "$(basename "$BUNDLE")" )
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mixnote-macOS-universal-vst3
+          path: Mixnote-macOS-universal.vst3.zip
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Mixnote-macOS-universal.vst3.zip
