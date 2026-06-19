@@ -92,6 +92,13 @@ function applySettings(s) {
     $('header-logo').style.height = (s.logo_height || 32) + 'px';
     $('header-logo').classList.remove('hidden');
   }
+  // Site name + favicon
+  const name = s.site_name || 'Mixnote';
+  document.title = name;
+  if (s.favicon_url) {
+    const fav = document.getElementById('favicon');
+    if (fav) fav.href = s.favicon_url;
+  }
 }
 
 // --- Init ---

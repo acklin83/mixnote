@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Mixnote Admin</title>
+  <link id="favicon" rel="icon" href="data:,">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/wavesurfer.js@7"></script>
   <script>
@@ -48,7 +49,7 @@
   <!-- Login Screen -->
   <div id="login-screen" class="flex items-center justify-center min-h-screen">
     <div class="bg-dark-800 rounded-lg p-8 w-full max-w-sm shadow-xl">
-      <h1 class="text-2xl font-bold mb-6 text-center">Mixnote</h1>
+      <h1 id="login-title" class="text-2xl font-bold mb-6 text-center">Mixnote</h1>
       <div id="setup-notice" class="hidden mb-4 p-3 bg-indigo-900/30 border border-indigo-700 rounded text-sm">
         First time? Create your admin account.
       </div>
@@ -212,6 +213,14 @@
       <button id="back-from-settings" class="text-sm text-gray-400 hover:text-white mb-4 transition">&larr; Back to Projects</button>
       <h2 class="text-2xl font-bold mb-6">Settings</h2>
 
+      <!-- Site Name -->
+      <div class="bg-dark-800 rounded-lg p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4">Site Name</h3>
+        <p class="text-sm text-gray-400 mb-1">Shown in the browser tab, header (when no logo) and login screen</p>
+        <input id="site-name" type="text" maxlength="100" placeholder="Mixnote"
+          class="w-full max-w-sm bg-dark-700 border border-dark-600 rounded px-3 py-2 text-sm focus:border-accent focus:outline-none">
+      </div>
+
       <!-- Logo -->
       <div class="bg-dark-800 rounded-lg p-6 mb-6">
         <h3 class="text-lg font-semibold mb-4">Logo</h3>
@@ -230,6 +239,24 @@
               <label class="text-sm text-gray-400">Size: <span id="logo-size-label">32</span>px</label>
               <input id="logo-size" type="range" min="16" max="120" value="32" class="w-full mt-1 accent-indigo-500">
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Favicon -->
+      <div class="bg-dark-800 rounded-lg p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4">Favicon</h3>
+        <div class="flex items-center gap-6">
+          <div id="favicon-preview" class="w-16 h-16 bg-dark-700 rounded flex items-center justify-center border border-dark-600 overflow-hidden">
+            <img id="favicon-img" class="hidden max-w-full max-h-full object-contain" alt="Favicon">
+            <span id="favicon-placeholder" class="text-gray-500 text-xs">None</span>
+          </div>
+          <div>
+            <p class="text-sm text-gray-400 mb-1">Browser tab icon</p>
+            <p class="text-xs text-gray-500 mb-3">PNG, ICO or SVG, max 1 MB</p>
+            <input id="favicon-file-input" type="file" accept="image/png,image/x-icon,image/svg+xml,.ico" class="hidden">
+            <button id="upload-favicon-btn" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded text-sm transition">Choose Image</button>
+            <button id="delete-favicon-btn" class="hidden px-4 py-2 text-red-400 hover:text-red-300 text-sm transition ml-2">Remove</button>
           </div>
         </div>
       </div>

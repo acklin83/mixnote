@@ -28,6 +28,39 @@ Visit `http://localhost:8080/admin` to set up your admin password on first run.
 
 ## Deployment
 
+### Prebuilt images (no source checkout)
+
+The fastest way to self-host. You only need a single compose file and a secret key — images are pulled from GitHub Container Registry, nothing is built locally.
+
+```bash
+curl -O https://raw.githubusercontent.com/acklin83/mixnote/main/docker-compose.ghcr.yml
+echo "MIXNOTE_SECRET_KEY=$(openssl rand -hex 32)" > .env
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+Open `http://<host>:8080/admin` to set the admin password. Put a reverse proxy with TLS in front (see below), or use the Caddy variant for automatic HTTPS.
+
+### Automatic HTTPS with Caddy
+
+If you have a domain pointing at the host and ports 80 + 443 are reachable, Caddy obtains and renews a Let's Encrypt certificate automatically — no manual cert setup.
+
+```bash
+curl -O https://raw.githubusercontent.com/acklin83/mixnote/main/docker-compose.caddy.yml
+curl -O https://raw.githubusercontent.com/acklin83/mixnote/main/Caddyfile
+printf "MIXNOTE_SECRET_KEY=%s\nMIXNOTE_DOMAIN=mix.example.com\n" "$(openssl rand -hex 32)" > .env
+docker compose -f docker-compose.caddy.yml up -d
+```
+
+Mixnote is then served at `https://mix.example.com`.
+
+### Configuration
+
+Copy `.env.example` to `.env` and adjust. `MIXNOTE_SECRET_KEY` is required in production (generate with `openssl rand -hex 32`); `MIXNOTE_DOMAIN` is only needed for the Caddy variant.
+
+### Branding
+
+Everything is white-label from **Admin > Settings** — no code changes: site name, favicon, logo (with size), accent colour and full dark/light theme palette, plus the email sender name. Settings are stored per instance in the database.
+
 ### Synology DiskStation
 
 **Prerequisites:** Docker (Container Manager) installed via Package Center.
@@ -279,6 +312,12 @@ PATCH  /api/projects/{uuid}/versions/{id}/favourite  # Toggle favourite
 GET    /api/audio/{version_id}                       # Stream audio file
 GET    /api/versions/{version_id}/peaks              # Waveform peak data (JSON)
 ```
+
+## License
+
+Mixnote is licensed under the **GNU Affero General Public License v3.0**
+(AGPLv3) — see [`LICENSE`](LICENSE) and [`LICENSING.md`](LICENSING.md) for the
+rationale and the licenses of bundled components (JUCE, VST3 SDK).
 
 ---
 

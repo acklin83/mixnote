@@ -135,6 +135,8 @@ class AppSettings(Base):
     light_waveform_progress_color: Mapped[str] = mapped_column(String(7), default="#4f46e5")
     logo_path: Mapped[str | None] = mapped_column(String(500), nullable=True, default=None)
     logo_height: Mapped[int] = mapped_column(Integer, default=32)
+    site_name: Mapped[str] = mapped_column(String(100), default="Mixnote")
+    favicon_path: Mapped[str | None] = mapped_column(String(500), nullable=True, default=None)
     clients_can_resolve: Mapped[bool] = mapped_column(Boolean, default=False)
     # Email settings
     email_provider: Mapped[str] = mapped_column(String(20), default="none")

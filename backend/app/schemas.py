@@ -153,6 +153,7 @@ class SettingsUpdate(BaseModel):
     light_waveform_color: str | None = Field(default=None, pattern=r'^#[0-9A-Fa-f]{6}$')
     light_waveform_progress_color: str | None = Field(default=None, pattern=r'^#[0-9A-Fa-f]{6}$')
     logo_height: int | None = Field(default=None, ge=16, le=120)
+    site_name: str | None = Field(default=None, min_length=1, max_length=100)
     clients_can_resolve: bool | None = None
     # Email settings
     email_provider: str | None = Field(default=None, pattern=r'^(none|smtp|sendgrid|mailgun)$')
@@ -190,6 +191,8 @@ class SettingsOut(BaseModel):
     light_waveform_progress_color: str
     logo_url: str | None = None
     logo_height: int = 32
+    site_name: str = "Mixnote"
+    favicon_url: str | None = None
     clients_can_resolve: bool = False
 
     model_config = {"from_attributes": True}

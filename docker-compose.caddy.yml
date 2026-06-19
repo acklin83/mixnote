@@ -1,0 +1,45 @@
+# Mixnote with automatic HTTPS via Caddy (Let's Encrypt).
+# Easiest public deployment if you have a domain pointing at this host and
+# ports 80 + 443 reachable from the internet.
+#
+#   curl -O https://raw.githubusercontent.com/acklin83/mixnote/main/docker-compose.caddy.yml
+#   curl -O https://raw.githubusercontent.com/acklin83/mixnote/main/Caddyfile
+#   printf "MIXNOTE_SECRET_KEY=%s\nMIXNOTE_DOMAIN=mix.example.com\n" "$(openssl rand -hex 32)" > .env
+#   docker compose -f docker-compose.caddy.yml up -d
+#
+# Caddy obtains and renews the TLS certificate automatically for MIXNOTE_DOMAIN.
+services:
+  backend:
+    image: ghcr.io/acklin83/mixnote-backend:latest
+    volumes:
+      - ./data:/data
+    environment:
+      - MIXNOTE_SECRET_KEY=${MIXNOTE_SECRET_KEY:?Set MIXNOTE_SECRET_KEY in .env (openssl rand -hex 32)}
+    restart: unless-stopped
+
+  nginx:
+    image: ghcr.io/acklin83/mixnote-nginx:latest
+    volumes:
+      - ./data/uploads:/data/uploads:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - MIXNOTE_DOMAIN=${MIXNOTE_DOMAIN:?Set MIXNOTE_DOMAIN to your public hostname (e.g. mix.example.com)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - nginx
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
