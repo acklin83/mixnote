@@ -144,6 +144,17 @@ Base.metadata.create_all(bind=engine)
 _migrate_db()
 _seed_default_template()
 
+# In demo mode, seed the shared demo admin (demo/demo) on startup so REAPER
+# script / VST3 login works even right after a reset, before any web visit.
+from .config import DEMO_MODE  # noqa: E402
+if DEMO_MODE:
+    from .auth import _get_or_create_demo_admin  # noqa: E402
+    _demo_db = SessionLocal()
+    try:
+        _get_or_create_demo_admin(_demo_db)
+    finally:
+        _demo_db.close()
+
 app = FastAPI(title="ReaMark", version="0.1.0")
 
 # Rate limiting (per client IP, respecting X-Forwarded-For behind a proxy)
