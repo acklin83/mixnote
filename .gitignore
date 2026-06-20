@@ -9,3 +9,7 @@ data/static/
 
 # Spec for a separate project (Studio OS) — not part of ReaMark
 STUDIO_OS_SPEC.md
+
+# Public demo instance data
+data-demo/
+.env.demo

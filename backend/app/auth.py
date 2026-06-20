@@ -7,6 +7,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
+from .config import DEMO_MODE
 from .database import get_db
 from .models import AdminUser, Project
 
@@ -15,7 +16,18 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-bearer_scheme = HTTPBearer()
+# In demo mode auth is optional — the whole admin API is open to everyone.
+bearer_scheme = HTTPBearer(auto_error=not DEMO_MODE)
+
+
+def _get_or_create_demo_admin(db: Session) -> AdminUser:
+    user = db.query(AdminUser).filter(AdminUser.username == "demo").first()
+    if user is None:
+        user = AdminUser(username="demo", password_hash=hash_password("demo"))
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
 
 
 def hash_password(password: str) -> str:
@@ -35,6 +47,9 @@ def get_current_admin(
     creds: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> AdminUser:
+    if DEMO_MODE:
+        # Open demo: grant the shared demo admin regardless of credentials.
+        return _get_or_create_demo_admin(db)
     try:
         payload = jwt.decode(creds.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")

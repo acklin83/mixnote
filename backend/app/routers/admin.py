@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
+from ..config import DEMO_MODE, DEMO_MAX_PROJECTS, DEMO_MAX_UPLOAD_MB
 from ..ratelimit import limiter
 from ..auth import (
     create_access_token,
@@ -100,6 +101,8 @@ def create_project(
     _admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
+    if DEMO_MODE and db.query(Project).count() >= DEMO_MAX_PROJECTS:
+        raise HTTPException(status_code=429, detail="Demo is full — it resets daily. Please try again later.")
     project = Project(title=req.title)
     db.add(project)
     db.commit()
@@ -204,6 +207,13 @@ def upload_version(
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"File type not allowed. Use: {', '.join(ALLOWED_EXTENSIONS)}")
+
+    if DEMO_MODE:
+        file.file.seek(0, 2)
+        size = file.file.tell()
+        file.file.seek(0)
+        if size > DEMO_MAX_UPLOAD_MB * 1024 * 1024:
+            raise HTTPException(status_code=400, detail=f"Demo limit: max {DEMO_MAX_UPLOAD_MB} MB per file")
 
     max_ver = db.query(func.max(Version.version_number)).filter(Version.song_id == song_id).scalar() or 0
     next_ver = version_number if version_number and version_number > 0 else max_ver + 1
