@@ -328,6 +328,9 @@ async def _batch_timer_task(project_id: str, delay_seconds: int, base_url: str):
 
 async def send_comment_notification(comment_id: int, reply_id: int | None, base_url: str):
     """High-level: schedule or send notification. Runs as background task."""
+    from .config import DEMO_MODE
+    if DEMO_MODE:
+        return  # never send email from the public demo instance
     global _batch_queue
 
     db = SessionLocal()
@@ -413,6 +416,9 @@ async def send_comment_notification(comment_id: int, reply_id: int | None, base_
 
 async def send_test_email(settings: AppSettings, to: str) -> str | None:
     """Send a test email. Returns None on success, error message on failure."""
+    from .config import DEMO_MODE
+    if DEMO_MODE:
+        return "Email is disabled in demo mode"
     try:
         await send_notification(
             settings,

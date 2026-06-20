@@ -1,0 +1,32 @@
+# Public, password-less DEMO instance — fully isolated from production.
+# Anyone can create projects, upload and comment WITHOUT logging in.
+# Email is disabled, uploads are size-capped, and the whole thing is meant to
+# be wiped regularly (see scripts/demo-reset.sh).
+#
+# NEVER point this at real client material — it has no access control.
+#
+#   echo "REAMARK_SECRET_KEY=$(openssl rand -hex 32)" > .env.demo
+#   docker compose -f docker-compose.demo.yml --env-file .env.demo up -d
+#
+# Put your reverse proxy (e.g. reamark.stoersender.ch) in front of port 8091.
+services:
+  backend:
+    image: ghcr.io/acklin83/reamark-backend:latest
+    volumes:
+      - ./data-demo:/data
+    environment:
+      - REAMARK_DEMO_MODE=1
+      - REAMARK_SECRET_KEY=${REAMARK_SECRET_KEY:-demo-instance-resets-regularly}
+      - REAMARK_DEMO_MAX_UPLOAD_MB=30
+      - REAMARK_DEMO_MAX_PROJECTS=100
+    restart: unless-stopped
+
+  nginx:
+    image: ghcr.io/acklin83/reamark-nginx:latest
+    ports:
+      - "8091:80"
+    volumes:
+      - ./data-demo/uploads:/data/uploads:ro
+    depends_on:
+      - backend
+    restart: unless-stopped

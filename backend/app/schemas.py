@@ -194,6 +194,7 @@ class SettingsOut(BaseModel):
     site_name: str = "ReaMark"
     favicon_url: str | None = None
     clients_can_resolve: bool = False
+    demo_mode: bool = False
 
     model_config = {"from_attributes": True}
 

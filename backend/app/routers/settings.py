@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_admin
+from ..config import DEMO_MODE
 from ..database import get_db
 from ..models import AdminUser, AppSettings
 from ..email_service import send_test_email
@@ -54,6 +55,7 @@ def _to_settings_out(settings: AppSettings) -> dict:
         "site_name": settings.site_name or "ReaMark",
         "favicon_url": favicon_url,
         "clients_can_resolve": settings.clients_can_resolve,
+        "demo_mode": DEMO_MODE,
     }
 
 

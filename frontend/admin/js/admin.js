@@ -32,6 +32,13 @@ let isSetupMode = false;
 
 async function init() {
   await loadAppSettings();
+  if (appSettings && appSettings.demo_mode) {
+    // Open demo: no login, the admin API is public. Skip straight to the dashboard.
+    const banner = $('demo-banner'); if (banner) banner.classList.remove('hidden');
+    const logout = $('logout-btn'); if (logout) logout.classList.add('hidden');
+    showDashboard();
+    return;
+  }
   if (token) {
     try { await api('/admin/projects'); showDashboard(); }
     catch { token = null; localStorage.removeItem('token'); showLogin(); }
